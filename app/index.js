@@ -1,5 +1,5 @@
 import React, { useMemo } from 'react';
-import { View, StyleSheet } from 'react-native';
+import { View, StyleSheet, Image } from 'react-native';
 import { Button, Text } from 'react-native-paper';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router'; 
@@ -12,13 +12,16 @@ const Landing = () => {
   return (
   <SafeAreaView style={styles.container}>
     <View style={styles.h1}>
-    <Text variant="displayLarge" style={styles.loginText}>STUD</Text>
-    <Text variant="displayLarge" style={styles.logText}>GET</Text>
+    <Image
+        source={require('../assets/logo.png')} 
+        style={styles.logo}
+        resizeMode="contain" 
+      />
     </View>
     <View style={styles.header}>
       <Text variant="headlineMedium" style={styles.recoveryText}>Best way to save your money.</Text>
     </View>
-    <View style={styles.h1}>
+    <View style={styles.header}>
       <Text variant="headlineMedium" style={styles.recoveryText}>Let's get started...</Text>
     </View>
     <Button 
@@ -49,15 +52,14 @@ const styles = StyleSheet.create({
   header: {
     alignItems: 'center',
     marginBottom: 10,
-    marginTop: -40
+    marginTop: -30
   },
   recoveryText: {
     fontSize: 12,
     color: '#fff' 
   },
   h1: {
-    marginBottom: -9,
-    marginRight: 60
+    alignItems: 'center', 
   },
   input: {
     marginBottom: 10,
@@ -69,11 +71,6 @@ const styles = StyleSheet.create({
     width: 150, 
     alignSelf: 'center', 
   },
-  h1: {
-    alignItems: 'center', 
-    marginBottom: 20,
-    flexDirection: 'row',
-},
 loginText: {
     fontSize: 56,
     fontWeight: 'bold',
@@ -81,6 +78,10 @@ loginText: {
   logText: {
     fontSize: 35,
     fontWeight: 'bold',
+  },
+  logo: {
+    width: 285, 
+    height: 189,
   },
 });
 

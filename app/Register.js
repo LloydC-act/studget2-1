@@ -1,6 +1,6 @@
 import { useRouter } from 'expo-router';
 import React, { useState } from 'react';
-import { View, StyleSheet, TouchableOpacity, ToastAndroid } from 'react-native';
+import { View, StyleSheet, TouchableOpacity, ToastAndroid, Image} from 'react-native';
 import { TextInput, Button, Text } from 'react-native-paper';
 import supabase from '../utils/client';
 
@@ -59,53 +59,68 @@ const Register = () => {
   const handleSignUp = async () => {
     if (!validateFields()) return;
   
-    // Sign up the user
-    const { user, error: signUpError } = await supabase.auth.signUp({
-      email,
-      password,options: {
-        data: {
-          display_name: name,
-          phone: phoneNumber,
+    try {
+      // Sign up the user in Supabase Auth
+      const { data: authData, error: signUpError } = await supabase.auth.signUp({
+        email,
+        password,
+        options: {
+          data: {
+            display_name: name, // Optional metadata
+            phone: phoneNumber,
+          },
         },
-      },
-    });
+      });
   
-    // Check if the sign-up resulted in an error
-    if (signUpError) {
-      // Check for the specific error of email already being registered
-      if (signUpError.message.includes('already registered')) {
-        setError('This email is already registered. Please use a different email.');
-      } else {
-        setError(signUpError.message);
-      }
-      return; // Exit if sign-up fails
-    }
-  
-    // Insert additional user information into the users table
-    const { data, error: insertError } = await supabase
-      .from('users')
-      .insert([
-        { id_number: idNumber, 
-          name: name, 
-          phone: phoneNumber, 
-          email: email,
+      if (signUpError) {
+        // Handle email already registered
+        if (signUpError.message.includes('already registered')) {
+          setError('This email is already registered. Please use a different email.');
+        } else {
+          setError(signUpError.message);
         }
+        return;
+      }
+  
+      // Get the user ID from the authData
+      const userId = authData.user.id; // This is the UUID you need
+  
+      // Insert user data into the `profiles` table
+      const { data, error: insertError } = await supabase.from('profiles').insert([
+        {
+          id: userId, // Use the user ID here
+          student_id: idNumber,
+          username: name,
+          phone: phoneNumber,
+          email: email,
+        },
       ]);
   
       if (insertError) {
-        setError(insertError.message);
+        // Check for database constraint violations (e.g., unique violations)
+        if (insertError.message.includes('duplicate key value')) {
+          setError('ID number, phone number, or email already exists. Please use unique values.');
+        } else {
+          setError(insertError.message);
+        }
       } else {
-        console.log("User registered and inserted into users table:", data);
-        ToastAndroid.show('Registration successful!', ToastAndroid.SHORT); // Show the notification
-        router.replace('Login'); // Navigate to login after successful registration
+        console.log('User  registered successfully:', data);
+        ToastAndroid.show('Registration successful!', ToastAndroid.SHORT); // Show success message
+        router.replace('Login'); // Navigate to Login
       }
-    };
-
+    } catch (error) {
+      setError('An unexpected error occurred. Please try again later.');
+      console.error('Error during registration:', error);
+    }
+  };
   return (
     <View style={styles.container}>
       <View style={styles.h1}>
-        <Text variant="displayLarge" style={styles.loginText}>STUD</Text>
-        <Text variant="displayLarge" style={styles.logText}>GET</Text>
+      <Image
+        source={require('../assets/logo.png')} 
+        style={styles.logo}
+        resizeMode="contain" 
+      />
       </View>
       <View style={styles.header}>
         <Text variant="headlineMedium" style={styles.registerText}>Create an account</Text>
@@ -165,6 +180,7 @@ const styles = StyleSheet.create({
   },
   header: {
     alignItems: 'center', 
+    marginTop: -20
   },
   registerText: {
     fontWeight: 'bold', 
@@ -182,7 +198,6 @@ const styles = StyleSheet.create({
   },
   h1: {
     alignItems: 'center', 
-    marginBottom: 20,
     flexDirection: 'row',
   },
   loginText: {
@@ -203,6 +218,10 @@ const styles = StyleSheet.create({
   errorText: {
     color: 'red',
     marginBottom: 8,
+  },
+  logo: {
+    width: 285, 
+    height: 189,
   },
 });
 

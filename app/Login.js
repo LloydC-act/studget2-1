@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
-import { View, StyleSheet, TouchableOpacity, ActivityIndicator } from 'react-native';
+import { View, StyleSheet, TouchableOpacity, ActivityIndicator, Image } from 'react-native';
 import { TextInput, Button, Text } from 'react-native-paper';
-import { useRouter } from 'expo-router'; 
+import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import supabase from '../utils/client';
 
@@ -15,37 +15,56 @@ const Login = () => {
   const [loading, setLoading] = useState(false);
 
   const handleLogin = async () => {
-    // Clear previous error
-    setError('');
-    
+    setError(''); // Clear previous error
+    setLoading(true); // Set loading state
+  
     // Validate inputs
     if (!email || !password) {
       setError('Please enter both email and password.');
+      setLoading(false);
       return;
     }
-
+  
     // Attempt to log in the user
-    setLoading(true); // Set loading state
-    const { data, error: loginError } = await supabase.auth.signInWithPassword({
+    const { data: user, error: loginError } = await supabase.auth.signInWithPassword({
       email,
       password,
     });
-
+  
     setLoading(false); // Reset loading state
-
+  
     if (loginError) {
+      console.error("Login Error:", loginError);  // Log the error for debugging
       setError(loginError.message); // Set error message if login fails
     } else {
-      console.log("User  logged in:", data);
-      router.replace('dashboard'); // Navigate to the dashboard after successful login
+      console.log("User logged in:", user);  // Log user details
+  
+      // Fetch user data from the `profiles` table using user ID
+      const { data: profileData, error: fetchError } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('id', user.user.id)  // Use user.id to fetch the profile data
+        .single();  // Fetch the single record
+  
+      if (fetchError) {
+        console.error("Fetch Profile Error:", fetchError); // Log fetch error
+        setError(fetchError.message);  // Handle error if fetching profile data fails
+      } else {
+        console.log("Profile data:", profileData);  // Log profile data
+        // Navigate to the dashboard after successful login
+        router.replace('dashboard');
+      }
     }
   };
 
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.h1}>
-        <Text variant="displayLarge" style={styles.loginText}>STUD</Text>
-        <Text variant="displayLarge" style={styles.logText}>GET</Text>
+        <Image
+          source={require('../assets/logo.png')} 
+          style={styles.logo}
+          resizeMode="contain" 
+        />
       </View>
       <View style={styles.header}>
         <Text variant="headlineMedium" style={styles.recoveryText}>Login</Text>
@@ -103,6 +122,7 @@ const styles = StyleSheet.create({
   },
   header: {
     alignItems: 'center',
+    marginTop: -20
   },
   recoveryText: {
     fontWeight: 'bold',
@@ -120,16 +140,6 @@ const styles = StyleSheet.create({
   },
   h1: {
     alignItems: 'center', 
-    marginBottom: 20,
-    flexDirection: 'row',
-  },
-  loginText: {
-    fontSize: 56,
-    fontWeight: 'bold',
-  },
-  logText: {
-    fontSize: 35,
-    fontWeight: 'bold',
   },
   footer: {
     flexDirection: 'row',
@@ -142,6 +152,10 @@ const styles = StyleSheet.create({
   errorText: {
     color: 'red',
     marginBottom: 8,
+  },
+  logo: {
+    width: 285, 
+    height: 189,
   },
 });
 

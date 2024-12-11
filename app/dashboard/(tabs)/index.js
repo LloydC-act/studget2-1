@@ -1,23 +1,49 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Image } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, Image, Dimensions  } from 'react-native';
 import Icon from 'react-native-vector-icons/FontAwesome';
 import Feather from 'react-native-vector-icons/Feather';
 import { useRouter } from 'expo-router';
+import { BarChart, Grid } from "react-native-chart-kit";
+import { MaterialIcons } from '@expo/vector-icons';
 
 const index = () => {
   const router = useRouter(); 
+  const [currentMonth, setCurrentMonth] = useState(0); // 0 = January, 1 = February, etc.
+  const months = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+  
+  const data = {
+    labels: ['Week 1', 'Week 2', 'Week 3', 'Week 4'],
+    datasets: [
+      {
+        data: [800, 1200, 1500, 2000],
+        color: (opacity = 1) => `rgba(134, 65, 244, ${opacity})`,
+        strokeWidth: 2,
+      },
+    ],
+  };
+  
+  const chartConfig = {
+    backgroundGradientFrom: '#fff',
+    backgroundGradientTo: '#fff',
+    color: (opacity = 1) => `rgba(0, 0, 0, ${opacity})`,
+    barPercentage: 0.5,
+    decimalPlaces: 0,
+    labelColor: (opacity = 1) => `rgba(0, 0, 0, ${opacity})`,
+    propsForDots: {
+      r: '6',
+      strokeWidth: '2',
+      stroke: '#ffa726'
+    },
+    barColors: ['#0000ff', '#BA75D2', '#BA75D2', '#BA75D2'],
+    style: {
+      borderRadius: 16,
+    },
+  };
 
   return (
     <View style={styles.container}>
      <View style={styles.container2}>
       <View style={styles.iconTextContainer}>
-        <TouchableOpacity>
-        <View style={styles.avatarContainer}>
-        <Image 
-          source={require('../../../assets/avatar.png')}
-          style={styles.avatar} /> 
-      </View>
-        </TouchableOpacity>
         <Text style={styles.text}>Welcome Back!</Text>
         <TouchableOpacity>
           <Icon name="bell" size={30} color="#fff" borderRadius={50} />
@@ -28,7 +54,7 @@ const index = () => {
       <Text style={{fontSize: 34 ,color: '#fff'}}>
         ₱ 1,000,000 
       </Text>
-      <TouchableOpacity style={styles.button} onPress={() => router.push('/app/tansactions')}>
+      <TouchableOpacity style={styles.button} onPress={() => router.replace('cashin')}>
       <Feather name="plus-circle" size={35} color="#000" />
         <Text style={styles.buttonText1}>Cash In</Text>
       </TouchableOpacity>
@@ -49,11 +75,30 @@ const index = () => {
       </View>
       </View>
       <View style={styles.container3}>
-
+      
+      <View style={styles.monthContainer}>
+      <TouchableOpacity onPress={() => setCurrentMonth((currentMonth - 1 + 12) % 12)}>
+        <MaterialIcons name="arrow-back-ios" size={24} color="#000" />
+      </TouchableOpacity>
+      <Text style={styles.monthText}>{months[currentMonth]}</Text>
+      <TouchableOpacity onPress={() => setCurrentMonth((currentMonth + 1) % 12)}>
+        <MaterialIcons name="arrow-forward-ios" size={24} color="#000" />
+      </TouchableOpacity>
       </View>
+
+      <BarChart
+        data={data}
+        width={Dimensions.get('window').width - 32}
+        height={220}
+        chartConfig={chartConfig}
+        verticalLabelRotation={0}
+        fromZero
+      />
+    </View>
+
       <View style={styles.mid}>
         <Text style={styles.buttonText}>Transactions</Text>
-      <TouchableOpacity onPress={() => router.push('Transactions')}>
+      <TouchableOpacity onPress={() => router.replace('Transactions')}>
         <Text style={styles.buttonText}>See all</Text>
       </TouchableOpacity>
       </View>
@@ -66,6 +111,7 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'flex-start', 
     alignItems: 'center',
+    marginTop: -30,
   },
   container2: {
     justifyContent: 'center', 
@@ -81,6 +127,8 @@ const styles = StyleSheet.create({
     backgroundColor: '#fff',
     width: '100%',
     height: '30%',
+    marginTop: 30,
+    marginBottom: 20,
   },
   transact: {
     flexDirection: 'row',
@@ -94,22 +142,9 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginBottom: 40,
   },
-  avatarContainer: {
-    width: 25 + 25,
-    height: 25 + 25, 
-    borderRadius: 50, 
-    backgroundColor: '#fff',
-    justifyContent: 'center', 
-    alignItems: 'center', 
-  },
-  avatar: {
-    width: 35, 
-    height: 35, 
-    borderRadius: 50, 
-  },
   text: {
-    marginRight: 110, 
-    marginLeft: 10,
+    marginRight: 150, 
+    marginLeft: 0,
     fontSize: 24,
     color: '#fff'
   },
@@ -155,7 +190,8 @@ const styles = StyleSheet.create({
   },
   mid: {
     flexDirection: 'row',
-    alignItems: 'center'
+    alignItems: 'center',
+    marginTop: 20
   },
   buttonText: {
     color: '#000',
@@ -177,6 +213,19 @@ const styles = StyleSheet.create({
   buttonText1: {
     color: '#000',
     fontSize: 18
+  },
+  monthContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    width: '100%',
+    paddingHorizontal: 16,
+    marginBottom: 16,
+  },
+  monthText: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#000',
   },
 });
 

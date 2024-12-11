@@ -15,6 +15,8 @@ const RootLayout = () => {
             <Stack.Screen name='Recovery' options={{headerShown:false}}/>
             <Stack.Screen name='Register' options={{headerShown:false}}/>
             <Stack.Screen name='dashboard' options={{title: 'Dashboard',headerShown:false}}/>
+            <Stack.Screen name='cashin' options={{headerShown:false}}/>
+            <Stack.Screen name='Transactions' options={{headerShown:false}}/>
         </Stack>
       </SafeAreaProvider>
     </PaperProvider>

@@ -1,9 +1,10 @@
 import React from 'react';
-import { View, Text, ScrollView, TouchableOpacity, Linking } from 'react-native';
+import { View, Text, ScrollView, TouchableOpacity, Linking, StyleSheet } from 'react-native';
 
 const Help = () => {
   return (
-    <ScrollView contentContainerStyle={{ padding: 20 }}>
+  <View style={styles.container}>
+    <ScrollView contentContainerStyle={{ padding: 20,}}>
       <Text style={{ fontSize: 24, fontWeight: 'bold', marginBottom: 10 }}>
         Help & Support
       </Text>
@@ -74,7 +75,16 @@ const Help = () => {
         </TouchableOpacity>
       </View>
     </ScrollView>
+    </View>
   );
 };
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    padding: 20,
+    backgroundColor: '#D9D9FF',
+  },
+});
 
 export default Help;

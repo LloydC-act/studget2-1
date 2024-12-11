@@ -1,61 +1,112 @@
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { Drawer } from 'expo-router/drawer';
 import { Button } from 'react-native-paper';
-import { View, Text, Image, StyleSheet, ScrollView } from 'react-native';
+import { View, Text, Image, StyleSheet, ScrollView, RefreshControl } from 'react-native';
 import { useRouter } from 'expo-router';
-import { DrawerItemList } from '@react-navigation/drawer'; 
+import { DrawerItemList } from '@react-navigation/drawer';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useEffect, useState } from 'react';
 import supabase from '../../utils/client'; // Adjust the import path as needed
 
 const CustomDrawerContent = (props) => {
-  const router = useRouter(); 
-  const [userData, setUserData] = useState(null);
+  const router = useRouter();
+  const [profileData, setProfileData] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false); // Track refreshing state
 
-  useEffect(() => {
-    const fetchUserData = async () => {
-      const user = supabase.auth.user(); // Get the currently authenticated user
+  const fetchProfileData = async () => {
+    try {
+      setLoading(true); // Start loading when refreshing
+      const {
+        data: { user },
+        error: authError,
+      } = await supabase.auth.getUser(); // Use getUser() instead of user()
+  
+      if (authError) {
+        console.error('Error getting authenticated user:', authError);
+        return;
+      }
+  
       if (user) {
         const { data, error } = await supabase
-          .from('users')
-          .select('name, id_number') // Adjust the fields you want to fetch
-          .eq('email',user.email) // Assuming you have a foreign key relation
-          .single(); // Get a single row
-
+          .from('profiles')
+          .select('username, student_id, avatar_url')
+          .eq('id', user.id) // Use the authenticated user's ID
+          .single();
+  
         if (error) {
-          console.error('Error fetching user data:', error);
-        } else {
-          setUserData(data);
+          console.error('Error fetching profile data:', error);
+          return;
         }
+  
+        setProfileData(data);
+      } else {
+        console.error('No authenticated user found');
       }
-      setLoading(false);
-    };
+    } catch (error) {
+      console.error('Unexpected error fetching profile data:', error);
+    } finally {
+      setLoading(false); // Stop loading spinner
+      setRefreshing(false); // Stop refreshing spinner
+    }
+  };
 
-    fetchUserData();
+  useEffect(() => {
+    fetchProfileData();
   }, []);
+
+  const onRefresh = () => {
+    setRefreshing(true);
+    fetchProfileData(); // Trigger the profile data refresh
+  };
 
   return (
     <View style={{ flex: 1 }}>
       <View style={styles.drawerContent}>
-        <Image
-          source={require('../../assets/avatar.png')} 
-          style={styles.avatar}
-        />
         {loading ? (
           <Text style={styles.headerText}>Loading...</Text>
         ) : (
           <>
-            <Text style={styles.headerText}>{userData?.name || 'User  Name'}</Text>
-            <Text style={styles.headerText}>{userData?.id_number || 'User  Number'}</Text>
+            {profileData?.avatar_url ? (
+              <Image
+                source={{ uri: profileData.avatar_url }}
+                style={styles.avatar}
+              />
+            ) : (
+              <View style={styles.avatarContainer}>
+                <Text style={styles.avatarText}>No Image</Text>
+              </View>
+            )}
+            <Text style={styles.headerText}>
+              {profileData?.username || 'User Name'}
+            </Text>
+            <Text style={styles.headerText}>
+              {profileData?.student_id || 'Student ID'}
+            </Text>
           </>
         )}
       </View>
-      <ScrollView contentContainerStyle={{ flexGrow: 1 }}>
+      <ScrollView
+        contentContainerStyle={{ flexGrow: 1 }}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={onRefresh} // Trigger refresh when user pulls down
+          />
+        }
+      >
         <DrawerItemList {...props} />
       </ScrollView>
       <View style={styles.logoutButtonContainer}>
-        <Button mode="contained" onPress={() => router.replace('Login')}>Logout</Button>
+        <Button
+          mode="contained"
+          onPress={async () => {
+            await supabase.auth.signOut(); // Log the user out
+            router.replace('Login'); // Redirect to Login page
+          }}
+        >
+          Logout
+        </Button>
       </View>
     </View>
   );
@@ -64,58 +115,94 @@ const CustomDrawerContent = (props) => {
 export default function Layout() {
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
-      <Drawer
-        drawerContent={(props) => <CustomDrawerContent {...props} />}
-      >
+      <Drawer drawerContent={(props) => <CustomDrawerContent {...props} />}>
         <Drawer.Screen
-          name="(tabs)" 
+          name="(tabs)"
           options={{
             drawerLabel: 'Home',
             title: 'Dashboard',
-            drawerIcon: () => <MaterialCommunityIcons name="home-outline" size={20} color="#000" />
+            drawerIcon: () => (
+              <MaterialCommunityIcons
+                name="home-outline"
+                size={20}
+                color="#000"
+              />
+            ),
           }}
         />
         <Drawer.Screen
-          name="EditProfile" 
+          name="EditProfile"
           options={{
             drawerLabel: 'Edit Profile',
             title: 'Edit Profile',
-            drawerIcon: () => <MaterialCommunityIcons name="account-cog" size={20} color="#000" />
+            drawerIcon: () => (
+              <MaterialCommunityIcons
+                name="account-cog"
+                size={20}
+                color="#000"
+              />
+            ),
           }}
         />
         <Drawer.Screen
-          name="Help" 
+          name="Help"
           options={{
             drawerLabel: 'Help',
             title: 'Help',
-            drawerIcon: () => <MaterialCommunityIcons name="help-circle-outline" size={20} color="#000" />
+            drawerIcon: () => (
+              <MaterialCommunityIcons
+                name="help-circle-outline"
+                size={20}
+                color="#000"
+              />
+            ),
           }}
         />
         <Drawer.Screen
-          name="Security" 
+          name="Security"
           options={{
             drawerLabel: 'Security',
             title: 'Security',
-            drawerIcon: () => <MaterialCommunityIcons name="shield-check-outline" size={20} color="#000" />
+            drawerIcon: () => (
+              <MaterialCommunityIcons
+                name="shield-check-outline"
+                size={20}
+                color="#000"
+              />
+            ),
           }}
         />
       </Drawer>
     </GestureHandlerRootView>
   );
-}
+};
 
 const styles = StyleSheet.create({
   drawerContent: {
     alignItems: 'center',
     padding: 20,
     backgroundColor: '#D9D9FF',
-    marginBottom: 50
+    marginBottom: 50,
   },
   avatar: {
-    width: 80,
-    height: 80, 
-    borderRadius: 40,
+    width: 120,
+    height: 120,
+    borderRadius: 60,
     marginBottom: 10,
+  },
+  avatarContainer: {
+    width: 120,
+    height: 120,
+    borderRadius: 60,
+    backgroundColor: '#ccc', // Gray background for the "No Image" circle
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 10,
+  },
+  avatarText: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: '#fff', // White text color for better contrast
   },
   headerText: {
     fontSize: 18,

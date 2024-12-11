@@ -1,7 +1,7 @@
 
 import { useRouter } from 'expo-router';
 import React, { useMemo } from 'react';
-import { View, StyleSheet,TouchableOpacity } from 'react-native';
+import { View, StyleSheet,TouchableOpacity ,Image} from 'react-native';
 import { TextInput, Button, Text } from 'react-native-paper';
 
 const Recovery = () => {
@@ -10,8 +10,11 @@ const Recovery = () => {
   return(
   <View style={styles.container}>
     <View style={styles.h1}>
-    <Text variant="displayLarge" style={styles.loginText}>STUD</Text>
-    <Text variant="displayLarge" style={styles.logText}>GET</Text>
+    <Image
+        source={require('../assets/logo.png')} 
+        style={styles.logo}
+        resizeMode="contain" 
+      />
     </View>
     <View style={styles.header}>
       <Text variant="headlineMedium" style={styles.recoveryText}>Can't access your account?      </Text>
@@ -38,6 +41,7 @@ const styles = StyleSheet.create({
   },
   header: {
     alignItems: 'center',
+    marginTop: -20
   },
   recoveryText: {
     fontWeight: 'bold',
@@ -55,7 +59,6 @@ const styles = StyleSheet.create({
   },
   h1: {
     alignItems: 'center', 
-    marginBottom: 20,
     flexDirection: 'row',
 },
 loginText: {
@@ -72,6 +75,10 @@ loginText: {
   linkText: {
     color: '#fff', // Change to your preferred link color
     textDecorationLine: 'underline', // Underline for the link
+  },
+  logo: {
+    width: 285, 
+    height: 189,
   },
 });
 

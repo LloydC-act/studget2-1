@@ -10,6 +10,34 @@ const Transactions = () => {
   const [transactions, setTransactions] = useState([]);
   const [loading, setLoading] = useState(true);
 
+  // Fetch recipient's name based on wallet_id
+  const fetchRecipientName = async (walletId) => {
+    // Check if walletId is null or undefined
+    if (!walletId) {
+      console.error('Invalid walletId:', walletId);
+      return 'Unknown Recipient'; // Handle case where walletId is invalid
+    }
+
+    try {
+      // Query the 'profiles' table to fetch recipient's username based on wallet_id
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('username')
+        .eq('id', walletId)
+        .single();
+
+      if (error || !data) {
+        console.error('Error fetching recipient name:', error);
+        return 'Unknown Recipient'; // Return fallback value if no user is found
+      }
+
+      return data.username; // Return the recipient's username
+    } catch (err) {
+      console.error('Error fetching recipient name:', err);
+      return 'Unknown Recipient';
+    }
+  };
+
   const fetchTransactions = async () => {
     try {
       setLoading(true);
@@ -23,22 +51,50 @@ const Transactions = () => {
 
       const userId = user.id;
 
-      // Fetch transactions for the user's wallet
-      const { data, error } = await supabase
+      // Fetch transactions where the user is the sender
+      const { data: sentData, error: sentError } = await supabase
         .from('transactions')
         .select('*')
         .eq('wallet_id', userId)
         .order('created_at', { ascending: false });
 
-      if (error) {
-        console.error('Error fetching transactions:', error);
-        Alert.alert('Error', 'Failed to load transactions. Please try again.');
+      // Fetch notifications where the user is the recipient
+      const { data: receivedData, error: receivedError } = await supabase
+        .from('notifications')
+        .select('*')
+        .eq('wallet_id', userId)
+        .order('created_at', { ascending: false });
+
+      if (sentError || receivedError) {
+        console.error('Error fetching transactions and notifications:', sentError, receivedError);
+        Alert.alert('Error', 'Failed to load transactions and notifications. Please try again.');
         return;
       }
 
-      setTransactions(data);
+      // Process transactions and notifications
+      const updatedTransactions = await Promise.all(
+        sentData.map(async (transaction) => {
+          const recipientName = await fetchRecipientName(transaction.recipient_wallet_id);
+          return {
+            ...transaction,
+            recipientName,
+            isReceived: false, // Mark as 'sent' transaction
+          };
+        })
+      );
+
+      const notificationData = receivedData.map((notification) => ({
+        ...notification,
+        isReceived: true, // Mark as 'received' notification
+      }));
+
+      // Combine transactions and notifications
+      const allData = [...updatedTransactions, ...notificationData];
+      allData.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+
+      setTransactions(allData);
     } catch (err) {
-      console.error('Error fetching transactions:', err);
+      console.error('Error fetching transactions and notifications:', err);
       Alert.alert('Error', 'Something went wrong. Please try again.');
     } finally {
       setLoading(false);
@@ -90,13 +146,13 @@ const Transactions = () => {
           {balance !== null ? `₱ ${balance.toLocaleString()}` : 'Loading...'}
         </Text>
         <View style={styles.info}>
-          <Feather name="arrow-up-left" size={40} color="#fff" borderRadius={50} justifyContent="center"/>
+          <Feather name="arrow-up-left" size={40} color="#fff" borderRadius={50} justifyContent="center" />
           <View style={styles.Income}>
             <Text style={styles.in}>Income</Text>
             <Text style={styles.word}>₱ 123,456</Text>
           </View>
           <TouchableOpacity>
-            <Feather name="arrow-down-right" size={40} color="#fff" borderRadius={50} justifyContent="center"/>
+            <Feather name="arrow-down-right" size={40} color="#fff" borderRadius={50} justifyContent="center" />
           </TouchableOpacity>
           <View style={styles.Expenses}>
             <Text style={styles.in}>Expenses</Text>
@@ -110,21 +166,31 @@ const Transactions = () => {
         </View>
         <ScrollView style={styles.transactionList}>
           {loading ? (
-            <Text style={styles.infoText}>Loading transactions...</Text>
+            <Text style={styles.infoText}>Loading transactions and notifications...</Text>
           ) : transactions.length === 0 ? (
-            <Text style={styles.infoText}>No transactions available.</Text>
+            <Text style={styles.infoText}>No transactions or notifications available.</Text>
           ) : (
-            transactions.map((transaction) => (
-              <View key={transaction.transaction_id} style={styles.transactionCard}>
-                <Text style={styles.transactionType}>{transaction.type}</Text>
-                <Text style={styles.transactionAmount}>
-                  Amount: PHP {transaction.amount.toFixed(2)}
+            transactions.map((item) => (
+              <View
+                key={item.transaction_id || item.notification_id}
+                style={[
+                  styles.transactionCard,
+                  item.isReceived ? { backgroundColor: '#f0f0f0' } : null,
+                ]}
+              >
+                <Text style={styles.transactionType}>
+                  {item.isReceived ? 'Money Receive' : item.type}
                 </Text>
+                {!item.isReceived && (
+                  <Text style={styles.transactionRecipient}>
+                    Recipient: {item.recipientName || 'Unknown'}
+                  </Text>
+                )}
                 <Text style={styles.transactionDescription}>
-                  {transaction.description || 'No description provided'}
+                  {item.isReceived ? item.message : item.description || 'No description provided'}
                 </Text>
                 <Text style={styles.transactionDate}>
-                  Date: {new Date(transaction.created_at).toLocaleString()}
+                  Date: {new Date(item.created_at).toLocaleString()}
                 </Text>
               </View>
             ))
@@ -214,6 +280,11 @@ const styles = StyleSheet.create({
   transactionAmount: {
     fontSize: 16,
     color: '#333',
+  },
+  transactionRecipient: {
+    fontSize: 14,
+    color: '#777',
+    marginTop: 5,
   },
   transactionDescription: {
     fontSize: 14,

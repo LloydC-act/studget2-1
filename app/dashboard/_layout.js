@@ -4,23 +4,23 @@ import { Button } from 'react-native-paper';
 import { View, Text, Image, StyleSheet, ScrollView, RefreshControl } from 'react-native';
 import { useRouter } from 'expo-router';
 import { DrawerItemList } from '@react-navigation/drawer';
-import { MaterialCommunityIcons } from '@expo/vector-icons';
+import { MaterialCommunityIcons, MaterialIcons } from '@expo/vector-icons';
 import { useEffect, useState } from 'react';
-import supabase from '../../utils/client'; // Adjust the import path as needed
+import supabase from '../../utils/client';
 
 const CustomDrawerContent = (props) => {
   const router = useRouter();
   const [profileData, setProfileData] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [refreshing, setRefreshing] = useState(false); // Track refreshing state
+  const [refreshing, setRefreshing] = useState(false);
 
   const fetchProfileData = async () => {
     try {
-      setLoading(true); // Start loading when refreshing
+      setLoading(true);
       const {
         data: { user },
         error: authError,
-      } = await supabase.auth.getUser(); // Use getUser() instead of user()
+      } = await supabase.auth.getUser();
   
       if (authError) {
         console.error('Error getting authenticated user:', authError);
@@ -124,6 +124,21 @@ export default function Layout() {
             drawerIcon: () => (
               <MaterialCommunityIcons
                 name="home-outline"
+                size={20}
+                color="#000"
+              />
+            ),
+          }}
+        />
+        <Drawer.Screen
+          name="BudgetP"
+          options={{
+            drawerLabel: 'Budget Planner',
+            title: 'Plan Your budget',
+            headerShown:false,
+            drawerIcon: () => (
+              <MaterialIcons
+                name="add-task"
                 size={20}
                 color="#000"
               />

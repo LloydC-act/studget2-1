@@ -8,12 +8,51 @@ import { MaterialIcons } from '@expo/vector-icons';
 import supabase from '../../../utils/client';
 
 const index = () => {
+  
   const router = useRouter();
   const [transactions, setTransactions] = useState([]);
   const [loading, setLoading] = useState(true);
   const [currentMonth, setCurrentMonth] = useState(0); // 0 = January, 1 = February, etc.
   const [balance, setBalance] = useState(null); // Store the wallet balance
   const months = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+
+  
+
+  const [hasNewNotification, setHasNewNotification] = useState(false);
+
+  const checkForNewNotifications = async () => {
+    try {
+      // Fetch the current authenticated user
+      const { data: { user }, error: userError } = await supabase.auth.getUser();
+      if (userError || !user) {
+        console.error('Error fetching user:', userError);
+        return;
+      }
+
+      // Fetch the user's unread notifications
+      const { data: notifications, error: notificationsError } = await supabase
+        .from('notifications')
+        .select('*')
+        .eq('wallet_id', user.id)
+        .eq('message', false);
+
+      if (notificationsError) {
+        console.error('Error fetching notifications:', notificationsError);
+        return;
+      }
+
+      // Update the hasNewNotification state based on the number of unread notifications
+      setHasNewNotification(notifications.length > 0);
+    } catch (error) {
+      console.error('Error checking for new notifications:', error);
+    }
+  };
+
+  useEffect(() => {
+    fetchTransactions();
+    checkForNewNotifications();
+  }, []);
+
 
   const data = {
     labels: ['Week 1', 'Week 2', 'Week 3', 'Week 4'],
@@ -114,8 +153,13 @@ const index = () => {
      <View style={styles.container2}>
       <View style={styles.iconTextContainer}>
         <Text style={styles.text}>Welcome Back!</Text>
-        <TouchableOpacity>
-          <Icon name="bell" size={30} color="#fff" borderRadius={50} />
+        <TouchableOpacity onPress={() => router.push('notifications')}>
+          <View style={styles.bellIcon}>
+            <Icon name="bell" size={30} color="#fff" />
+            {hasNewNotification && (
+              <View style={styles.newNotificationDot} />
+            )}
+          </View>
         </TouchableOpacity>
       </View >
       <Text style={styles.bal}>Account Balance</Text>
@@ -352,6 +396,19 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     marginVertical: 20,
   },
+  bellIcon: {
+    position: 'relative',
+  },
+  newNotificationDot: {
+    position: 'absolute',
+    top: -5,
+    right: -5,
+    width: 10,
+    height: 10,
+    borderRadius: 5,
+    backgroundColor: 'red',
+  },
+  
 });
 
 

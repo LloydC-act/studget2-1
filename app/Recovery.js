@@ -54,7 +54,7 @@ const Recovery = () => {
     try {
       // Correctly call the resetPasswordForEmail method from supabase.auth
       const { error } = await supabase.auth.resetPasswordForEmail(email, {
-        redirectTo: `http://localhost:3000/resetpass`,  // Assuming your app runs on localhost
+        redirectTo: `exp://192.168.18.240:8081/resetpass`, // For Android Device (replace with your local IP)
       });
   
       if (error) {

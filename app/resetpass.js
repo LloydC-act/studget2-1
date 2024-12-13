@@ -1,76 +1,61 @@
 import { useRouter } from 'expo-router';
 import React, { useState } from 'react';
-import { View, StyleSheet, TouchableOpacity, Image } from 'react-native';
+import { View, StyleSheet, TouchableOpacity, Image, Alert } from 'react-native';
 import { TextInput, Button, Text } from 'react-native-paper';
 import supabase from '../utils/client';
 
-const Recovery = () => {
-  const [email, setEmail] = useState('');
+const ResetPassword = () => {
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [message, setMessage] = useState('');
   const [error, setError] = useState('');
-  const [isEmailVerified, setIsEmailVerified] = useState(false);
+  const [isEmailVerified, setIsEmailVerified] = useState(true); // Automatically assume user is verified
   const router = useRouter();
 
-  const handleCheckEmail = async () => {
+  const handlePasswordReset = async () => {
     setMessage('');
     setError('');
-    setIsEmailVerified(false);
 
-    if (!email) {
-      setError('Please enter your email address.');
+    if (!password || !confirmPassword) {
+      setError('Please fill out both password fields.');
+      return;
+    }
+
+    if (password !== confirmPassword) {
+      setError('Passwords do not match.');
+      return;
+    }
+
+    if (!isEmailVerified) {
+      setError('Please verify your email first.');
       return;
     }
 
     try {
-      // Call the RPC function to check if the email exists
-      const { data, error } = await supabase.rpc('check_email_exists', {
-        email_input: email,
+      const { data: { user }, error: userError } = await supabase.auth.getUser();
+      if (userError || !user) {
+        Alert.alert('Error', 'User is not authenticated.');
+        return;
+      }
+
+      // Update password for the logged-in user
+      const { error } = await supabase.auth.updateUser({
+        password,
       });
 
       if (error) {
-        setError('Error checking email. Please try again.');
-      } else if (!data) {
-        setError('This email is not registered.');
+        setError(error.message);
       } else {
-        setIsEmailVerified(true);
-        setMessage('Email verified. You can now reset your password.');
+        setMessage('Your password has been updated successfully.');
+        setTimeout(() => {
+          router.replace('Login'); // Redirect to login page after success message is shown
+        }, 2000); // 2 seconds delay before navigating
       }
     } catch (err) {
       setError('An error occurred. Please try again.');
     }
   };
 
-  const handlePasswordReset = async () => {
-    setMessage('');
-    setError('');
-  
-    if (!email) {
-      setError('Please enter your email address.');
-      return;
-    }
-  
-    try {
-      // Correctly call the resetPasswordForEmail method from supabase.auth
-      const { error } = await supabase.auth.resetPasswordForEmail(email, {
-        redirectTo: `http://localhost:3000/resetpass`,  // Assuming your app runs on localhost
-      });
-  
-      if (error) {
-        // Log the error to the console for debugging purposes
-        console.error('Password reset error:', error);
-        setError('Failed to send password reset email. Please try again.');
-      } else {
-        setMessage('A password reset link has been sent to your email.');
-      }
-    } catch (err) {
-      // Log the error to console for more information
-      console.error('Unexpected error occurred:', err);
-      setError('An unexpected error occurred. Please try again.');
-    }
-  };
-  
   return (
     <View style={styles.container}>
       <View style={styles.h1}>
@@ -86,22 +71,24 @@ const Recovery = () => {
         </Text>
       </View>
       <TextInput
-        label="Email"
+        label="New Password"
         mode="outlined"
         style={styles.input}
-        value={email}
-        onChangeText={setEmail}
-        editable={!isEmailVerified} // Disable email input after verification
+        secureTextEntry
+        value={password}
+        onChangeText={setPassword}
       />
-      {!isEmailVerified ? (
-        <Button mode="contained" style={styles.button} onPress={handleCheckEmail}>
-          Verify Email
-        </Button>
-      ) : (
-        <Button mode="contained" style={styles.button} onPress={handlePasswordReset}>
-          Send Password Reset Link
-        </Button>
-      )}
+      <TextInput
+        label="Confirm Password"
+        mode="outlined"
+        style={styles.input}
+        secureTextEntry
+        value={confirmPassword}
+        onChangeText={setConfirmPassword}
+      />
+      <Button mode="contained" style={styles.button} onPress={handlePasswordReset}>
+        Reset Password
+      </Button>
       {error ? <Text style={styles.errorText}>{error}</Text> : null}
       {message ? <Text style={styles.successText}>{message}</Text> : null}
       <View style={styles.footer}>
@@ -166,4 +153,4 @@ const styles = StyleSheet.create({
   },
 });
 
-export default Recovery;
+export default ResetPassword;

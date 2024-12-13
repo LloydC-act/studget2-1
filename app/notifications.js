@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, ScrollView } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity } from 'react-native';
 import supabase from '../utils/client'; // Adjust the import path as needed
 
 const Notifications = () => {
@@ -31,7 +31,7 @@ const Notifications = () => {
           // Fetch budget notifications
           const { data: budgetData, error: budgetError } = await supabase
             .from('budgets') // Ensure the table name is correct
-            .select('*')
+            .select('id, name, end_date, amount, read') // Fetch the 'read' status
             .eq('profile_id', userId);
 
           if (budgetError) {
@@ -49,7 +49,7 @@ const Notifications = () => {
           // Fetch money-received notifications
           const { data: moneyData, error: moneyError } = await supabase
             .from('notifications') // Ensure the table name matches your schema
-            .select('*')
+            .select('notification_id, message, created_at, read') // Fetch the 'read' status
             .eq('wallet_id', userId);
 
           if (moneyError) {
@@ -65,6 +65,7 @@ const Notifications = () => {
               date: item.end_date,
               amount: `₱${item.amount}`,
               message: `Budget "${item.name}" is due on ${item.end_date}.`,
+              read: item.read || false, // Default to unread if not set
             })),
             ...moneyData.map((item) => ({
               id: item.notification_id,
@@ -73,8 +74,12 @@ const Notifications = () => {
               date: item.created_at,
               amount: '',
               message: item.message,
+              read: item.read || false, // Default to unread if not set
             })),
           ];
+
+          // Sort to place unread notifications on top
+          mergedNotifications.sort((a, b) => (a.read === b.read ? 0 : a.read ? 1 : -1));
 
           setNotifications(mergedNotifications);
         } catch (error) {
@@ -86,12 +91,50 @@ const Notifications = () => {
     fetchNotifications();
   }, [userId]);
 
+  // Toggle notification read status and update in database
+  const toggleNotificationRead = async (id) => {
+    try {
+      // Find the clicked notification
+      const notification = notifications.find((n) => n.id === id);
+      if (!notification) return;
+
+      // Update the notification's read status in the database
+      if (notification.type === 'budget') {
+        await supabase
+          .from('budgets')
+          .update({ read: true })
+          .eq('id', id);
+      } else if (notification.type === 'money') {
+        await supabase
+          .from('notifications')
+          .update({ read: true })
+          .eq('notification_id', id);
+      }
+
+      // Update the local state
+      setNotifications((prevNotifications) =>
+        prevNotifications.map((n) =>
+          n.id === id ? { ...n, read: true } : n
+        )
+      );
+    } catch (error) {
+      console.error('Error updating notification read status:', error);
+    }
+  };
+
   return (
     <View style={styles.container}>
       <ScrollView>
         {notifications.length > 0 ? (
           notifications.map((notification) => (
-            <View key={notification.id} style={styles.notificationItem}>
+            <TouchableOpacity
+              key={notification.id}
+              onPress={() => toggleNotificationRead(notification.id)}
+              style={[
+                styles.notificationItem,
+                !notification.read && styles.unreadNotification, // Highlight unread notifications
+              ]}
+            >
               <Text style={styles.name}>{notification.name}</Text>
               <Text style={styles.message}>{notification.message}</Text>
               {notification.date && (
@@ -100,7 +143,7 @@ const Notifications = () => {
               {notification.amount && (
                 <Text style={styles.amount}>Amount: {notification.amount}</Text>
               )}
-            </View>
+            </TouchableOpacity>
           ))
         ) : (
           <Text style={styles.noNotifications}>No upcoming notifications.</Text>
@@ -116,12 +159,6 @@ const styles = StyleSheet.create({
     backgroundColor: '#f0f0f0',
     padding: 20,
   },
-  header: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    marginBottom: 20,
-    color: '#3498db',
-  },
   notificationItem: {
     backgroundColor: 'white',
     padding: 20,
@@ -132,6 +169,9 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.25,
     shadowRadius: 3.84,
     elevation: 5,
+  },
+  unreadNotification: {
+    backgroundColor: '#ADD8E6', // Light blue for unread notifications
   },
   name: {
     fontSize: 16,

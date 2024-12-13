@@ -1,10 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, TextInput, TouchableOpacity, Image, StyleSheet, Alert } from 'react-native';
 import * as ImagePicker from 'expo-image-picker'; // For image selection
+import Icon from 'react-native-vector-icons/MaterialIcons';
+import { useRouter } from 'expo-router';
 import supabase from '../../utils/client'; // Adjust the import path as needed
 
 const EditProfile = () => {
   const [image, setImage] = useState(null);
+  const router = useRouter();
   const [name, setName] = useState('');
   const [studentId, setStudentId] = useState('');
   const [phoneNumber, setPhoneNumber] = useState('');
@@ -128,6 +131,12 @@ const EditProfile = () => {
 
   return (
     <View style={styles.container}>
+      <View style={styles.headers}>
+              <TouchableOpacity style={styles.backButton} onPress={() => router.replace('dashboard')}>
+                <Icon name="arrow-back" size={24} color="white" />
+              </TouchableOpacity>
+              <Text style={styles.headerText}>Edit Your Profile</Text>
+            </View>
       {/* Profile Picture */}
       <TouchableOpacity style={styles.imageContainer} onPress={pickImage}>
         {image ? (
@@ -174,8 +183,8 @@ const EditProfile = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    padding: 20,
     backgroundColor: '#D9D9FF',
+    alignItems: 'center',
   },
   header: {
     fontSize: 24,
@@ -210,17 +219,40 @@ const styles = StyleSheet.create({
     paddingHorizontal: 15,
     fontSize: 16,
     backgroundColor: '#fff',
+    width: '80%'
   },
   button: {
     backgroundColor: '#007bff',
     padding: 15,
-    borderRadius: 10,
+    borderRadius: 50,
     alignItems: 'center',
     marginTop: 20,
   },
   buttonText: {
     color: '#fff',
     fontSize: 16,
+    fontWeight: 'bold',
+  },
+  headers: {
+    height: 60,
+    backgroundColor: '#3498db',
+    flexDirection: 'row',
+    alignItems: 'center',
+    width: "100%",
+    padding: 20,
+    marginBottom: 20
+  },
+  backButton: {
+    width: 40,
+    height: 40,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderRadius: 10,
+    marginLeft: -15,
+  },
+  headerText: {
+    fontSize: 18,
+    color: 'white',
     fontWeight: 'bold',
   },
 });

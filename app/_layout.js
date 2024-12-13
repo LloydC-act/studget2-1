@@ -18,6 +18,7 @@ const RootLayout = () => {
             <Stack.Screen name='cashin' options={{headerShown:false}}/>
             <Stack.Screen name='Transactions' options={{headerShown:false}}/>
             <Stack.Screen name='notifications' options={{title: 'Notifications'}}/>
+            <Stack.Screen name="resetpass"  options={{title: 'Reset Password',headerShown:false}}/>
         </Stack>
       </SafeAreaProvider>
     </PaperProvider>

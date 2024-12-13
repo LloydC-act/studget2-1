@@ -28,26 +28,26 @@ const index = () => {
         console.error('Error fetching user:', userError);
         return;
       }
-
-      // Fetch the user's unread notifications
+  
+      // Fetch the user's unread notifications (read = false)
       const { data: notifications, error: notificationsError } = await supabase
         .from('notifications')
         .select('*')
         .eq('wallet_id', user.id)
-        .eq('message', false);
-
+        .eq('read', false);  // Check for unread notifications
+  
       if (notificationsError) {
         console.error('Error fetching notifications:', notificationsError);
         return;
       }
-
+  
       // Update the hasNewNotification state based on the number of unread notifications
-      setHasNewNotification(notifications.length > 0);
+      setHasNewNotification(notifications.length > 0); // Set to true if there are any unread notifications
     } catch (error) {
       console.error('Error checking for new notifications:', error);
     }
   };
-
+  
   useEffect(() => {
     fetchTransactions();
     checkForNewNotifications();

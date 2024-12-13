@@ -18,7 +18,7 @@ const DashboardLayout = () => {
       <Tabs.Screen 
         name="plus" 
         options={{
-          tabBarLabel: () => null,
+          title: 'Send',
           tabBarIcon: ({ focused }) => (
             <MaterialCommunityIcons name={focused ? 'send' : 'send-outline'} size={24} color='balck' /> // Profile icon
           ),

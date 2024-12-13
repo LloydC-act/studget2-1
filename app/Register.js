@@ -1,6 +1,6 @@
 import { useRouter } from 'expo-router';
 import React, { useState } from 'react';
-import { View, StyleSheet, TouchableOpacity, ToastAndroid, Image} from 'react-native';
+import { View, StyleSheet, TouchableOpacity, ToastAndroid, Image } from 'react-native';
 import { TextInput, Button, Text } from 'react-native-paper';
 import supabase from '../utils/client';
 
@@ -12,11 +12,12 @@ const Register = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
-  
   const [emailError, setEmailError] = useState('');
   const [passwordError, setPasswordError] = useState('');
   const [confirmPasswordError, setConfirmPasswordError] = useState('');
   const [error, setError] = useState('');
+  const [showPassword, setShowPassword] = useState(false); // State for toggling password visibility
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false); // State for toggling confirm password visibility
 
   const validateEmail = (email) => {
     const emailRegex = /^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i;
@@ -58,22 +59,20 @@ const Register = () => {
 
   const handleSignUp = async () => {
     if (!validateFields()) return;
-  
+
     try {
-      // Sign up the user in Supabase Auth
       const { data: authData, error: signUpError } = await supabase.auth.signUp({
         email,
         password,
         options: {
           data: {
-            display_name: name, // Optional metadata
+            display_name: name,
             phone: phoneNumber,
           },
         },
       });
-  
+
       if (signUpError) {
-        // Handle email already registered
         if (signUpError.message.includes('already registered')) {
           setError('This email is already registered. Please use a different email.');
         } else {
@@ -81,46 +80,38 @@ const Register = () => {
         }
         return;
       }
-  
-      // Get the user ID from the authData
-      const userId = authData.user.id; // This is the UUID you need
-  
-      // Insert user data into the `profiles` table
+
+      const userId = authData.user.id;
       const { data, error: insertError } = await supabase.from('profiles').insert([
         {
-          id: userId, // Use the user ID here
+          id: userId,
           student_id: idNumber,
           username: name,
           phone: phoneNumber,
           email: email,
         },
       ]);
-  
+
       if (insertError) {
-        // Check for database constraint violations (e.g., unique violations)
         if (insertError.message.includes('duplicate key value')) {
           setError('ID number, phone number, or email already exists. Please use unique values.');
         } else {
           setError(insertError.message);
         }
       } else {
-        console.log('User  registered successfully:', data);
-        ToastAndroid.show('Registration successful!', ToastAndroid.SHORT); // Show success message
-        router.replace('Login'); // Navigate to Login
+        ToastAndroid.show('Registration successful!', ToastAndroid.SHORT);
+        router.replace('Login');
       }
     } catch (error) {
       setError('An unexpected error occurred. Please try again later.');
       console.error('Error during registration:', error);
     }
   };
+
   return (
     <View style={styles.container}>
       <View style={styles.h1}>
-      <Image
-        source={require('../assets/logo.png')} 
-        style={styles.logo}
-        resizeMode="contain" 
-      />
+        <Image source={require('../assets/logo.png')} style={styles.logo} resizeMode="contain" />
       </View>
       <View style={styles.header}>
         <Text variant="headlineMedium" style={styles.registerText}>Create an account</Text>
@@ -129,34 +120,55 @@ const Register = () => {
       <TextInput label="Name" mode="outlined" style={styles.input} value={name} onChangeText={setName} />
       <TextInput label="ID number" mode="outlined" style={styles.input} value={idNumber} onChangeText={setIdNumber} />
       <TextInput label="Phone number" mode="outlined" style={styles.input} value={phoneNumber} onChangeText={setPhoneNumber} />
-      <TextInput 
-        label="Email" 
-        mode="outlined" 
-        style={styles.input} 
-        value={email} 
-        onChangeText={handleEmailChange} 
+      <TextInput
+        label="Email"
+        mode="outlined"
+        style={styles.input}
+        value={email}
+        onChangeText={handleEmailChange}
         error={!!emailError}
       />
       {emailError ? <Text style={styles.errorText}>{emailError}</Text> : null}
-      <TextInput 
-        label="Password" 
-        mode="outlined" secureTextEntry 
-        style={styles.input} 
-        value={password} 
-        onChangeText={handlePasswordChange} 
+      <TextInput
+        label="Password"
+        mode="outlined"
+        secureTextEntry={!showPassword} // Toggle password visibility
+        style={styles.input}
+        value={password}
+        onChangeText={handlePasswordChange}
         error={!!passwordError}
+        right={
+          <TextInput.Icon
+            icon={showPassword ? 'eye-off' : 'eye'}
+            onPress={() => setShowPassword(!showPassword)} // Toggle show/hide password
+          />
+        }
       />
       {passwordError ? <Text style={styles.errorText}>{passwordError}</Text> : null}
-      <TextInput 
-        label="Confirm Password" 
-        mode="outlined" 
-        secureTextEntry 
-        style={styles.input} 
-        value={confirmPassword} 
-        onChangeText={handleConfirmPasswordChange} 
+      <TextInput
+        label="Confirm Password"
+        mode="outlined"
+        secureTextEntry={!showConfirmPassword} // Toggle confirm password visibility
+        style={styles.input}
+        value={confirmPassword}
+        onChangeText={handleConfirmPasswordChange}
         error={!!confirmPasswordError}
+        right={
+          <TextInput.Icon
+            icon={showConfirmPassword ? 'eye-off' : 'eye'}
+            onPress={() => setShowConfirmPassword(!showConfirmPassword)} // Toggle show/hide confirm password
+          />
+        }
       />
       {confirmPasswordError ? <Text style={styles.errorText}>{confirmPasswordError}</Text> : null}
+
+      <Text style={styles.termsText}>
+        By clicking Sign Up, you agree to our{' '}
+        <Text style={styles.termsLink}>Terms</Text>,{' '}
+        <Text style={styles.termsLink}>Privacy Policy</Text>, and{' '}
+        <Text style={styles.termsLink}>Cookies Policy</Text>.
+      </Text>
+
       <Button mode="contained" style={styles.button} onPress={handleSignUp}>
         Sign Up
       </Button>
@@ -176,52 +188,55 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     padding: 16,
-    backgroundColor:'#BA75D2'
+    backgroundColor: '#BA75D2',
   },
   header: {
-    alignItems: 'center', 
-    marginTop: -20
+    alignItems: 'center',
+    marginTop: -20,
   },
   registerText: {
-    fontWeight: 'bold', 
-    color: '#fff'
+    fontWeight: 'bold',
+    color: '#fff',
   },
   input: {
     marginBottom: 16,
-    width: 250, 
-    alignSelf: 'center', 
+    width: 250,
+    alignSelf: 'center',
   },
   button: {
-    marginBottom: 16,
-    width: 120, 
-    alignSelf: 'center', 
+    marginBottom: 5,
+    width: 120,
+    alignSelf: 'center',
   },
   h1: {
-    alignItems: 'center', 
+    alignItems: 'center',
     flexDirection: 'row',
-  },
-  loginText: {
-    fontSize: 56,
-    fontWeight: 'bold',
-  },
-  logText: {
-    fontSize: 35,
-    fontWeight : 'bold',
   },
   footer: {
     flexDirection: 'row',
   },
   linkText: {
-    color: '#fff', // Change to your preferred link color
-    textDecorationLine: 'underline', // Underline for the link
+    color: '#fff',
+    textDecorationLine: 'underline',
   },
   errorText: {
     color: 'red',
     marginBottom: 8,
   },
   logo: {
-    width: 285, 
+    width: 285,
     height: 189,
+  },
+  termsText: {
+    textAlign: 'center',
+    fontSize: 14,
+    color: '#555', 
+    marginVertical: 10,
+  },
+  termsLink: {
+    color: '#6200EE', 
+    fontWeight: 'bold',
+    textDecorationLine: 'underline',
   },
 });
 

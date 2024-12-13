@@ -21,21 +21,12 @@ const Landing = () => {
     <View style={styles.header}>
       <Text variant="headlineMedium" style={styles.recoveryText}>Best way to save your money.</Text>
     </View>
-    <View style={styles.header}>
-      <Text variant="headlineMedium" style={styles.recoveryText}>Let's get started...</Text>
-    </View>
     <Button 
         mode="contained" 
         style={styles.button} 
         onPress={() => router.replace('Login')}
       >
-        Login
-      </Button>
-      <Button 
-        mode="text" 
-        onPress={() => router.push('Register')} // Navigate to Register screen
-      >
-        Sign Up
+        Let's get started
       </Button>
   </SafeAreaView>
   )
@@ -55,33 +46,21 @@ const styles = StyleSheet.create({
     marginTop: -30
   },
   recoveryText: {
-    fontSize: 12,
+    fontSize: 15,
     color: '#fff' 
   },
   h1: {
     alignItems: 'center', 
   },
-  input: {
-    marginBottom: 10,
-    width: 300, 
-    alignSelf: 'center',
-  },
   button: {
     marginBottom: 10,
-    width: 150, 
+    width: '45%', 
     alignSelf: 'center', 
-  },
-loginText: {
-    fontSize: 56,
-    fontWeight: 'bold',
-  },
-  logText: {
-    fontSize: 35,
-    fontWeight: 'bold',
   },
   logo: {
     width: 285, 
     height: 189,
+    marginBottom: 5
   },
 });
 

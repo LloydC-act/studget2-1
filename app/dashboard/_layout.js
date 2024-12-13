@@ -150,6 +150,7 @@ export default function Layout() {
           options={{
             drawerLabel: 'Edit Profile',
             title: 'Edit Profile',
+            headerShown:false,
             drawerIcon: () => (
               <MaterialCommunityIcons
                 name="account-cog"

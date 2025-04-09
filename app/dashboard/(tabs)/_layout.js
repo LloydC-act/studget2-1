@@ -1,7 +1,7 @@
 import { View, Text } from 'react-native';
 import React, { useMemo } from 'react';
 import { Tabs } from 'expo-router';
-import { MaterialCommunityIcons } from '@expo/vector-icons'; // Import the icon library
+import { MaterialCommunityIcons, SimpleLineIcons } from '@expo/vector-icons'; // Import the icon library
 
 const DashboardLayout = () => {
   return (
@@ -18,9 +18,9 @@ const DashboardLayout = () => {
       <Tabs.Screen 
         name="plus" 
         options={{
-          title: 'Send',
+          title: 'Stocks',
           tabBarIcon: ({ focused }) => (
-            <MaterialCommunityIcons name={focused ? 'send' : 'send-outline'} size={24} color='balck' /> // Profile icon
+            <SimpleLineIcons name={focused ? 'social-dropbox' : 'social-dropbox'} size={24} color='balck' /> // Profile icon
           ),
         }} 
       />

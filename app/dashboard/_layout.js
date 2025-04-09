@@ -6,102 +6,31 @@ import { useRouter } from 'expo-router';
 import { DrawerItemList } from '@react-navigation/drawer';
 import { MaterialCommunityIcons, MaterialIcons } from '@expo/vector-icons';
 import { useEffect, useState } from 'react';
-import supabase from '../../utils/client';
 
 const CustomDrawerContent = (props) => {
   const router = useRouter();
-  const [profileData, setProfileData] = useState(null);
-  const [loading, setLoading] = useState(true);
-  const [refreshing, setRefreshing] = useState(false);
-
-  const fetchProfileData = async () => {
-    try {
-      setLoading(true);
-      const {
-        data: { user },
-        error: authError,
-      } = await supabase.auth.getUser();
-  
-      if (authError) {
-        console.error('Error getting authenticated user:', authError);
-        return;
-      }
-  
-      if (user) {
-        const { data, error } = await supabase
-          .from('profiles')
-          .select('username, student_id, avatar_url')
-          .eq('id', user.id) // Use the authenticated user's ID
-          .single();
-  
-        if (error) {
-          console.error('Error fetching profile data:', error);
-          return;
-        }
-  
-        setProfileData(data);
-      } else {
-        console.error('No authenticated user found');
-      }
-    } catch (error) {
-      console.error('Unexpected error fetching profile data:', error);
-    } finally {
-      setLoading(false); // Stop loading spinner
-      setRefreshing(false); // Stop refreshing spinner
-    }
-  };
-
-  useEffect(() => {
-    fetchProfileData();
-  }, []);
-
-  const onRefresh = () => {
-    setRefreshing(true);
-    fetchProfileData(); // Trigger the profile data refresh
-  };
 
   return (
-    <View style={{ flex: 1 }}>
+    <View style={{ flex: 1 , backgroundColor: 'B09FE4'}}>
       <View style={styles.drawerContent}>
-        {loading ? (
-          <Text style={styles.headerText}>Loading...</Text>
-        ) : (
-          <>
-            {profileData?.avatar_url ? (
-              <Image
-                source={{ uri: profileData.avatar_url }}
-                style={styles.avatar}
-              />
-            ) : (
-              <View style={styles.avatarContainer}>
-                <Text style={styles.avatarText}>No Image</Text>
-              </View>
-            )}
-            <Text style={styles.headerText}>
-              {profileData?.username || 'User Name'}
-            </Text>
-            <Text style={styles.headerText}>
-              {profileData?.student_id || 'Student ID'}
-            </Text>
-          </>
-        )}
+      <View style={styles.logoContainer}>
+          <Image
+            source={{ uri: 'https://storage.googleapis.com/a1aa/image/pECnn_pfL37p2WKmUnoboOqNSFN0t47CsoHuHqvVNLY.jpg' }}
+            style={styles.logo}
+          />
+          <Text style={styles.logoText}>Inventory</Text>
+        </View>
       </View>
       <ScrollView
-        contentContainerStyle={{ flexGrow: 1 }}
-        refreshControl={
-          <RefreshControl
-            refreshing={refreshing}
-            onRefresh={onRefresh} // Trigger refresh when user pulls down
-          />
-        }
+        contentContainerStyle={{ flexGrow: 1, backgroundColor:'B09FE4' }}
       >
         <DrawerItemList {...props} />
       </ScrollView>
       <View style={styles.logoutButtonContainer}>
         <Button
           mode="contained"
-          onPress={async () => {
-            await supabase.auth.signOut(); // Log the user out
+          onPress={() => {
+            // Simulate logout action
             router.replace('Login'); // Redirect to Login page
           }}
         >
@@ -119,7 +48,7 @@ export default function Layout() {
         <Drawer.Screen
           name="(tabs)"
           options={{
-            drawerLabel: 'Home',
+            drawerLabel: 'Dashboard',
             title: 'Dashboard',
             drawerIcon: () => (
               <MaterialCommunityIcons
@@ -133,27 +62,11 @@ export default function Layout() {
         <Drawer.Screen
           name="BudgetP"
           options={{
-            drawerLabel: 'Budget Planner',
-            title: 'Plan Your budget',
-            headerShown:false,
+            drawerLabel: 'Items',
+            title: 'All Items',
             drawerIcon: () => (
               <MaterialIcons
-                name="add-task"
-                size={20}
-                color="#000"
-              />
-            ),
-          }}
-        />
-        <Drawer.Screen
-          name="EditProfile"
-          options={{
-            drawerLabel: 'Edit Profile',
-            title: 'Edit Profile',
-            headerShown:false,
-            drawerIcon: () => (
-              <MaterialCommunityIcons
-                name="account-cog"
+                name="shopping-bag"
                 size={20}
                 color="#000"
               />
@@ -195,30 +108,23 @@ export default function Layout() {
 
 const styles = StyleSheet.create({
   drawerContent: {
-    alignItems: 'center',
     padding: 20,
-    backgroundColor: '#D9D9FF',
+    backgroundColor: '#B09FE4',
     marginBottom: 50,
   },
-  avatar: {
-    width: 120,
-    height: 120,
-    borderRadius: 60,
-    marginBottom: 10,
-  },
-  avatarContainer: {
-    width: 120,
-    height: 120,
-    borderRadius: 60,
-    backgroundColor: '#ccc', // Gray background for the "No Image" circle
-    justifyContent: 'center',
+  logoContainer: {
+    flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 10,
+    padding: 16,
   },
-  avatarText: {
-    fontSize: 16,
+  logo: {
+    width: 40,
+    height: 40,
+    marginRight: 8,
+  },
+  logoText: {
+    fontSize: 18,
     fontWeight: 'bold',
-    color: '#fff', // White text color for better contrast
   },
   headerText: {
     fontSize: 18,

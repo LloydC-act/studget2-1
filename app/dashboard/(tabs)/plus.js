@@ -1,295 +1,120 @@
-import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, TextInput, Alert } from 'react-native';
-import RNPickerSelect from 'react-native-picker-select';
-import supabase from '../../../utils/client';
+import React, { useState } from 'react';
+import { View, Text, TextInput, TouchableOpacity, FlatList, StyleSheet, Modal } from 'react-native';
 
-const Transact = ({ onSwitch }) => {
-  const [selectedValue, setSelectedValue] = useState(null);
-  const [amount, setAmount] = useState('');
-  const [balance, setBalance] = useState(null);
-  const [loading, setLoading] = useState(true);
-  const [searchQuery, setSearchQuery] = useState('');
-  const [selectedRecipient, setSelectedRecipient] = useState(null);
-  const [errorMessage, setErrorMessage] = useState(''); // Error message state
+const initialData = [
+  { id: '1', name: 'Keyboard', stock: 3 },
+  { id: '2', name: 'Monitor', stock: 8 },
+  { id: '3', name: 'CPU', stock: 2 },
+  { id: '4', name: 'Mouse', stock: 5 },
+  { id: '5', name: 'RAM', stock: 1 },
+  { id: '6', name: 'SSD', stock: 6 },
+];
 
-  const items = [
-    { label: 'Pay Bills', value: 'Pay Bills' },
-    { label: 'Send Money', value: 'Send Money' },
-    { label: 'Pay Fee', value: 'Pay Fee' },
-  ];
+const StockManagement = () => {
+  const [data, setData] = useState(initialData);
+  const [modalVisible, setModalVisible] = useState(false);
+  const [newItem, setNewItem] = useState({ name: '', stock: '' });
 
-  // Fetch wallet balance
-  const fetchBalance = async () => {
-    setLoading(true);
-    try {
-      const { data: { user }, error: userError } = await supabase.auth.getUser();
-      if (userError || !user) throw new Error('User not authenticated.');
+  const handleStockIn = (item) => {
+    const updatedData = data.map(i =>
+      i.id === item.id ? { ...i, stock: i.stock + 1 } : i
+    );
+    setData(updatedData);
+  };
 
-      const { data: walletData, error: walletError } = await supabase
-        .from('wallets')
-        .select('balance')
-        .eq('wallet_id', user.id)
-        .single();
-
-      if (walletError || !walletData) throw new Error('Failed to fetch wallet balance.');
-
-      setBalance(walletData.balance);
-    } catch (error) {
-      console.error('Error fetching balance:', error.message);
-      Alert.alert('Error', error.message);
-    } finally {
-      setLoading(false);
+  const handleStockOut = (item) => {
+    if (item.stock > 0) {
+      const updatedData = data.map(i =>
+        i.id === item.id ? { ...i, stock: i.stock - 1 } : i
+      );
+      setData(updatedData);
+    } else {
+      alert('No stock left to remove!');
     }
   };
 
-  // Search for users
-  const handleSearch = async () => {
-    if (!searchQuery.trim()) {
-      Alert.alert('Error', 'Please enter a valid search query.');
-      return;
-    }
-
-    try {
-      const { data: users, error } = await supabase
-        .from('profiles')
-        .select('id, username, email')
-        .ilike('username', `%${searchQuery}%`);
-
-      if (error) throw new Error('Failed to search users.');
-
-      if (users.length === 0) {
-        setErrorMessage('No user found with that username.');
-        setSelectedRecipient(null);  // Clear selected recipient
-      } else {
-        setErrorMessage('');
-        const user = users[0];  // If a user is found, select the first one
-        setSelectedRecipient(user);
-        Alert.alert('Recipient found', `Recipient: ${user.username}. Proceeding with transaction.`);
-        handleTransaction(user);  // Automatically proceed with the transaction
-      }
-    } catch (error) {
-      console.error('Search Error:', error.message);
-      Alert.alert('Error', error.message);
-    }
+  const handleAddItem = () => {
+    setData([...data, { ...newItem, id: Date.now().toString() }]);
+    setNewItem({ name: '', stock: '' });
+    setModalVisible(false);
   };
-
-  const handleTransaction = async () => {
-    if (!selectedValue) {
-      Alert.alert('Error', 'Please select a purpose.');
-      return;
-    }
-  
-    const parsedAmount = parseFloat(amount);
-    if (isNaN(parsedAmount) || parsedAmount <= 0) {
-      Alert.alert('Error', 'Please enter a valid amount greater than 0.');
-      return;
-    }
-  
-    if (selectedValue === 'Send Money' && !selectedRecipient) {
-      Alert.alert('Error', 'Please select a recipient.');
-      return;
-    }
-  
-    try {
-      const { data: { user: currentUser }, error: userError } = await supabase.auth.getUser();
-      if (userError || !currentUser) throw new Error('User not authenticated.');
-  
-      // Prevent sending money to yourself
-      if (selectedValue === 'Send Money' && selectedRecipient?.id === currentUser.id) {
-        Alert.alert('Error', 'You cannot send money to yourself.');
-        return;
-      }
-  
-      if (balance < parsedAmount) {
-        Alert.alert('Error', 'Insufficient balance.');
-        return;
-      }
-  
-      // Prepare transaction data
-      const transactionData = {
-        wallet_id: currentUser.id,
-        type: selectedValue,
-        amount: parsedAmount,
-        description: `Transaction for ${selectedValue}`,
-        recipient_wallet_id: selectedRecipient?.id || null,
-      };
-  
-      // Insert transaction (backend trigger will handle balance updates)
-      const { error: transactionError } = await supabase
-        .from('transactions')
-        .insert([transactionData]);
-  
-      if (transactionError) throw new Error('Failed to log the transaction.');
-  
-      // Success case: Update UI and reset fields
-      setAmount('');
-      setSelectedValue(null);
-      setSearchQuery('');
-      setSelectedRecipient(null);
-  
-      // Refetch balance to reflect the updated value
-      await fetchBalance();
-  
-      Alert.alert('Success', `${selectedValue} transaction completed.`);
-    } catch (error) {
-      console.error('Transaction Error:', error.message);
-      Alert.alert('Error', error.message);
-    }
-  };
-  
-  useEffect(() => {
-    fetchBalance();
-  }, []);
 
   return (
     <View style={styles.container}>
-      <View style={styles.container2}>
-        <Text style={styles.bal}>Account Balance</Text>
-        <Text style={{ marginBottom: 20, fontSize: 34, color: '#fff' }}>
-          {loading ? 'Loading...' : `₱ ${balance?.toLocaleString()}`}
-        </Text>
-      </View>
-      <View style={styles.bot}>
-        <Text style={styles.text}>Amount:</Text>
-        <TextInput
-          placeholder="Enter Amount"
-          style={styles.input}
-          keyboardType="numeric"
-          value={amount}
-          onChangeText={setAmount}
-        />
-        <Text style={styles.text}>Purpose:</Text>
-        <RNPickerSelect
-          onValueChange={(value) => setSelectedValue(value)}
-          items={items}
-          style={pickerSelectStyles}
-          placeholder={{ label: 'Select a purpose...', value: null }}
-          value={selectedValue}
-        />
-        {selectedValue === 'Send Money' && (
-          <>
-            <Text style={styles.text}>Search Recipient:</Text>
-            <TextInput
-              placeholder="Enter Username"
-              style={styles.input}
-              value={searchQuery}
-              onChangeText={setSearchQuery}
-            />
-            <TouchableOpacity style={styles.searchButton} onPress={handleSearch}>
-              <Text style={styles.buttonText}>Search</Text>
-            </TouchableOpacity>
-            {errorMessage ? (
-              <Text style={styles.errorText}>{errorMessage}</Text>
-            ) : null}
-          </>
+      <Text style={styles.headerTitle}>📦 Stock Management</Text>
+
+      <Text style={styles.sectionTitle}>Stock Transactions</Text>
+      <FlatList
+        data={data}
+        keyExtractor={item => item.id}
+        renderItem={({ item }) => (
+          <View style={styles.itemCard}>
+            <Text style={styles.itemTitle}>{item.name}</Text>
+            <Text>Current Stock: {item.stock}</Text>
+            <View style={styles.buttonsContainer}>
+              <TouchableOpacity style={styles.stockInButton} onPress={() => handleStockIn(item)}>
+                <Text style={styles.stockInButtonText}>Stock In</Text>
+              </TouchableOpacity>
+              <TouchableOpacity style={styles.stockOutButton} onPress={() => handleStockOut(item)}>
+                <Text style={styles.stockOutButtonText}>Stock Out</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
         )}
-        <View style={styles.buttonContainer}>
-          <TouchableOpacity style={styles.button} onPress={() => handleTransaction()}>
-            <Text style={styles.buttonText}>Submit</Text>
+      />
+
+      <Modal visible={modalVisible} animationType="slide">
+        <View style={styles.modalContainer}>
+          <Text style={styles.modalTitle}>Add New Item</Text>
+          <TextInput
+            style={styles.input}
+            placeholder="Name"
+            value={newItem.name}
+            onChangeText={(text) => setNewItem({ ...newItem, name: text })}
+          />
+          <TextInput
+            style={styles.input}
+            placeholder="Stock"
+            value={newItem.stock}
+            onChangeText={(text) => setNewItem({ ...newItem, stock: text })}
+            keyboardType="numeric"
+          />
+          <TouchableOpacity style={styles.saveButton} onPress={handleAddItem}>
+            <Text style={styles.saveButtonText}>Save</Text>
+          </TouchableOpacity>
+          <TouchableOpacity style={styles.cancelButton} onPress={() => setModalVisible(false)}>
+            <Text style={styles.cancelButtonText}>Cancel</Text>
           </TouchableOpacity>
         </View>
-      </View>
+      </Modal>
+
+      <TouchableOpacity style={styles.addButton} onPress={() => setModalVisible(true)}>
+        <Text style={styles.addButtonText}>+ Add New Item</Text>
+      </TouchableOpacity>
     </View>
   );
 };
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    justifyContent: 'flex-start',
-    alignItems: 'flex-start',
-    marginTop: -30,
-  },
-  container2: {
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: '#68409C',
-    borderRadius: 25,
-    width: '100%',
-    height: '30%',
-  },
-  bal: {
-    fontSize: 16,
-    fontWeight: 'bold',
-    color: '#fff',
-  },
-  bot: {
-    justifyContent: 'flex-start',
-    alignItems: 'flex-start',
-    padding: 20,
-    width: '100%',
-    height: '60%',
-  },
-  text: {
-    fontSize: 18,
-    color: '#000',
-  },
-  input: {
-    padding: 10,
-    width: '90%',
-    alignSelf: 'center',
-    borderBottomWidth: 0.5,
-    marginBottom: 5,
-    fontSize: 18,
-  },
-  buttonContainer: {
-    justifyContent: 'center',
-    alignItems: 'center',
-    width: '100%',
-    marginTop: 20,
-  },
-  button: {
-    alignItems: 'center',
-    backgroundColor: '#6650A4',
-    borderRadius: 50,
-    width: '70%',
-    justifyContent: 'center',
-    marginVertical: 5,
-    padding: 15,
-  },
-  buttonText: {
-    color: '#fff',
-  },
-  searchButton: {
-    alignItems: 'center',
-    backgroundColor: '#6650A4',
-    borderRadius: 50,
-    width: '70%',
-    justifyContent: 'center',
-    marginVertical: 5,
-    padding: 10,
-    alignSelf: 'center',
-  },
-  errorText: {
-    color: 'red',
-    textAlign: 'center',
-    marginTop: 10,
-    justifyContent: 'center',
-    alignItems: 'center'
-  },
+  container: { flex: 1, backgroundColor: '#EDE9FE', padding: 16 },
+  headerTitle: { fontSize: 24, fontWeight: 'bold', marginBottom: 16, textAlign: 'center' },
+  sectionTitle: { fontSize: 20, fontWeight: 'bold', marginVertical: 12 },
+  itemCard: { backgroundColor: '#fff', padding: 12, borderRadius: 8, marginBottom: 10 },
+  itemTitle: { fontSize: 18, fontWeight: 'bold', marginBottom: 4 },
+  buttonsContainer: { flexDirection: 'row', marginTop: 10 },
+  stockInButton: { backgroundColor: '#34D399', padding: 8, borderRadius: 8, marginRight: 8 },
+  stockInButtonText: { color: '#fff', textAlign: 'center' },
+  stockOutButton: { backgroundColor: '#FBBF24', padding: 8, borderRadius: 8 },
+  stockOutButtonText: { color: '#fff', textAlign: 'center' },
+  modalContainer: { flex: 1, justifyContent: 'center', padding: 20, backgroundColor: '#F3E8FF' },
+  modalTitle: { fontSize: 22, fontWeight: 'bold', marginBottom: 16, textAlign: 'center' },
+  input: { borderWidth: 1, borderRadius: 8, padding: 10, backgroundColor: '#fff', marginBottom: 12 },
+  saveButton: { backgroundColor: '#4ADE80', padding: 12, borderRadius: 8, marginBottom: 8 },
+  saveButtonText: { textAlign: 'center', color: '#fff', fontWeight: 'bold' },
+  cancelButton: { padding: 12 },
+  cancelButtonText: { textAlign: 'center', color: '#6B7280' },
+  addButton: { backgroundColor: '#6D28D9', padding: 10, borderRadius: 8, marginTop: 16 },
+  addButtonText: { color: '#fff', textAlign: 'center' },
 });
 
-const pickerSelectStyles = StyleSheet.create({
-  inputIOS: {
-    fontSize: 16,
-    paddingVertical: 12,
-    paddingHorizontal: 10,
-    borderWidth: 1,
-    borderColor: '#000',
-    borderRadius: 4,
-    color: 'black',
-    paddingRight: 30,
-  },
-  inputAndroid: {
-    fontSize: 16,
-    paddingVertical: 8,
-    paddingHorizontal: 10,
-    borderWidth: 1,
-    borderColor: '#000',
-    borderRadius: 4,
-    color: 'black',
-    paddingRight: 30,
-  },
-});
-
-export default Transact;
+export default StockManagement;

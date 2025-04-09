@@ -3,78 +3,64 @@ import { View, Text, ScrollView, TouchableOpacity, Linking, StyleSheet } from 'r
 
 const Help = () => {
   return (
-  <View style={styles.container}>
-    <ScrollView contentContainerStyle={{ padding: 20,}}>
-      <Text style={{ fontSize: 24, fontWeight: 'bold', marginBottom: 10 }}>
-        Help & Support
-      </Text>
+    <View style={styles.container}>
+      <ScrollView contentContainerStyle={{ padding: 20 }}>
+        <Text style={styles.header}>Help & Support</Text>
 
-      <Text style={{ fontSize: 18, marginBottom: 20 }}>
-        Need help with our budgeting app? We're here to assist you.
-      </Text>
+        <Text style={styles.subHeader}>
+          Need help with the Inventory Management System? The IT team is here to support you.
+        </Text>
 
-      <View style={{ marginBottom: 20 }}>
-        <Text style={{ fontSize: 16, fontWeight: 'bold' }}>
-          Frequently Asked Questions (FAQs)
-        </Text>
-        <Text>
-          Check out our FAQs section for answers to common questions about our app.
-        </Text>
-        <TouchableOpacity onPress={() => Linking.openURL('https://example.com/faqs')}>
-          <Text style={{ color: 'blue', textDecorationLine: 'underline' }}>
-            Visit FAQs
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>System Guidelines</Text>
+          <Text>
+            Learn how to use the inventory system effectively. Review our usage guidelines.
           </Text>
-        </TouchableOpacity>
-      </View>
+          <TouchableOpacity onPress={() => Linking.openURL('https://example.com/inventory-guidelines')}>
+            <Text style={styles.link}>View Guidelines</Text>
+          </TouchableOpacity>
+        </View>
 
-      <View style={{ marginBottom: 20 }}>
-        <Text style={{ fontSize: 16, fontWeight: 'bold' }}>
-          Contact Us
-        </Text>
-        <Text>
-          Have a question or issue that's not covered in our FAQs? Reach out to us
-          directly.
-        </Text>
-        <TouchableOpacity onPress={() => Linking.openURL('mailto:support@example.com')}>
-          <Text style={{ color: 'blue', textDecorationLine: 'underline' }}>
-            support@example.com
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Report a Problem</Text>
+          <Text>
+            Encountered a bug or issue in the system? Contact the system developer directly.
           </Text>
-        </TouchableOpacity>
-      </View>
+          <TouchableOpacity onPress={() => Linking.openURL('mailto:devteam@example.com')}>
+            <Text style={styles.link}>devteam@example.com</Text>
+          </TouchableOpacity>
+        </View>
 
-      <View style={{ marginBottom: 20 }}>
-        <Text style={{ fontSize: 16, fontWeight: 'bold' }}>
-          Phone Support
-        </Text>
-        <Text>
-          Call us for assistance with our app.
-        </Text>
-        <TouchableOpacity onPress={() => Linking.openURL('tel:1234567890')}>
-          <Text style={{ color: 'blue', textDecorationLine: 'underline' }}>
-            123-456-7890
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>IT Support Hotline</Text>
+          <Text>
+            For urgent system issues, call the IT support team.
           </Text>
-        </TouchableOpacity>
-      </View>
+          <TouchableOpacity onPress={() => Linking.openURL('tel:+1234567890')}>
+            <Text style={styles.link}>+1 234 567 890</Text>
+          </TouchableOpacity>
+        </View>
 
-      <View style={{ marginBottom: 20 }}>
-        <Text style={{ fontSize: 16, fontWeight: 'bold' }}>
-          Social Media
-        </Text>
-        <Text>
-          Follow us on social media for updates, tips, and more.
-        </Text>
-        <TouchableOpacity onPress={() => Linking.openURL('https://twitter.com/example')}>
-          <Text style={{ color: 'blue', textDecorationLine: 'underline' }}>
-            Twitter
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Chat with IT Support</Text>
+          <Text>
+            Chat with a support agent via our official messaging channel.
           </Text>
-        </TouchableOpacity>
-        <TouchableOpacity onPress={() => Linking.openURL('https://facebook.com/example')}>
-          <Text style={{ color: 'blue', textDecorationLine: 'underline' }}>
-            Facebook
+          <TouchableOpacity onPress={() => Linking.openURL('https://t.me/InventorySupportBot')}>
+            <Text style={styles.link}>Open Chat</Text>
+          </TouchableOpacity>
+        </View>
+
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Stay Updated</Text>
+          <Text>
+            Follow our internal announcement board for updates and system maintenance schedules.
           </Text>
-        </TouchableOpacity>
-      </View>
-    </ScrollView>
+          <TouchableOpacity onPress={() => Linking.openURL('https://intranet.example.com/updates')}>
+            <Text style={styles.link}>Visit Update Board</Text>
+          </TouchableOpacity>
+        </View>
+      </ScrollView>
     </View>
   );
 };
@@ -83,7 +69,28 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     padding: 20,
-    backgroundColor: '#D9D9FF',
+    backgroundColor: '#B09FE4',
+  },
+  header: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    marginBottom: 10,
+  },
+  subHeader: {
+    fontSize: 18,
+    marginBottom: 20,
+  },
+  section: {
+    marginBottom: 20,
+  },
+  sectionTitle: {
+    fontSize: 16,
+    fontWeight: 'bold',
+  },
+  link: {
+    color: 'blue',
+    textDecorationLine: 'underline',
+    marginTop: 5,
   },
 });
 

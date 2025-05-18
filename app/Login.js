@@ -38,12 +38,6 @@ const Login = () => {
         >
           Login
         </Button>
-        <Button 
-          mode="text" 
-          onPress={() => router.push('Recovery')} // Navigate to Recover screen
-        >
-          Forgot Password?
-        </Button>
       </View>
     </SafeAreaView>
   );

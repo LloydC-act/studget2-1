@@ -1,120 +1,85 @@
 import React, { useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, FlatList, StyleSheet, Modal } from 'react-native';
+import { Text, View, Button, StyleSheet, Alert, ActivityIndicator } from 'react-native';
+import { CameraView, useCameraPermissions } from 'expo-camera';
+import { supabase } from '../../../utils/supabaseclient';
 
-const initialData = [
-  { id: '1', name: 'Keyboard', stock: 3 },
-  { id: '2', name: 'Monitor', stock: 8 },
-  { id: '3', name: 'CPU', stock: 2 },
-  { id: '4', name: 'Mouse', stock: 5 },
-  { id: '5', name: 'RAM', stock: 1 },
-  { id: '6', name: 'SSD', stock: 6 },
-];
+export default function PlusScreen() {
+  const [permission, requestPermission] = useCameraPermissions();
+  const [scanned, setScanned] = useState(false);
+  const [processing, setProcessing] = useState(false);
 
-const StockManagement = () => {
-  const [data, setData] = useState(initialData);
-  const [modalVisible, setModalVisible] = useState(false);
-  const [newItem, setNewItem] = useState({ name: '', stock: '' });
-
-  const handleStockIn = (item) => {
-    const updatedData = data.map(i =>
-      i.id === item.id ? { ...i, stock: i.stock + 1 } : i
+  if (!permission) return <Text>Requesting camera permission...</Text>;
+  if (!permission.granted) {
+    return (
+      <View style={styles.container}>
+        <Text style={styles.message}>We need your permission to access the camera</Text>
+        <Button title="Grant permission" onPress={requestPermission} />
+      </View>
     );
-    setData(updatedData);
-  };
+  }
 
-  const handleStockOut = (item) => {
-    if (item.stock > 0) {
-      const updatedData = data.map(i =>
-        i.id === item.id ? { ...i, stock: i.stock - 1 } : i
-      );
-      setData(updatedData);
-    } else {
-      alert('No stock left to remove!');
+  const handleBarCodeScanned = async ({ data }) => {
+    if (scanned || processing) return;
+    setScanned(true);
+    setProcessing(true);
+
+    try {
+      const { error } = await supabase.from('stock_out').insert([
+        { serial_number: data, quantity: 1 }
+      ]);
+
+      if (error) throw error;
+
+      Alert.alert("Success", `Stock Out for serial: ${data}`);
+    } catch (error) {
+      console.error(error);
+      Alert.alert("Error", error.message || "Failed to record stock out");
+    } finally {
+      setProcessing(false);
     }
-  };
-
-  const handleAddItem = () => {
-    setData([...data, { ...newItem, id: Date.now().toString() }]);
-    setNewItem({ name: '', stock: '' });
-    setModalVisible(false);
   };
 
   return (
     <View style={styles.container}>
-      <Text style={styles.headerTitle}>📦 Stock Management</Text>
-
-      <Text style={styles.sectionTitle}>Stock Transactions</Text>
-      <FlatList
-        data={data}
-        keyExtractor={item => item.id}
-        renderItem={({ item }) => (
-          <View style={styles.itemCard}>
-            <Text style={styles.itemTitle}>{item.name}</Text>
-            <Text>Current Stock: {item.stock}</Text>
-            <View style={styles.buttonsContainer}>
-              <TouchableOpacity style={styles.stockInButton} onPress={() => handleStockIn(item)}>
-                <Text style={styles.stockInButtonText}>Stock In</Text>
-              </TouchableOpacity>
-              <TouchableOpacity style={styles.stockOutButton} onPress={() => handleStockOut(item)}>
-                <Text style={styles.stockOutButtonText}>Stock Out</Text>
-              </TouchableOpacity>
-            </View>
-          </View>
-        )}
+      <CameraView
+        style={StyleSheet.absoluteFillObject}
+        onBarcodeScanned={handleBarCodeScanned}
+        barcodeScannerSettings={{
+          barcodeTypes: ['qr', 'code128', 'code39', 'code93', 'ean13', 'ean8', 'upc_a', 'upc_e'],
+        }}
       />
-
-      <Modal visible={modalVisible} animationType="slide">
-        <View style={styles.modalContainer}>
-          <Text style={styles.modalTitle}>Add New Item</Text>
-          <TextInput
-            style={styles.input}
-            placeholder="Name"
-            value={newItem.name}
-            onChangeText={(text) => setNewItem({ ...newItem, name: text })}
-          />
-          <TextInput
-            style={styles.input}
-            placeholder="Stock"
-            value={newItem.stock}
-            onChangeText={(text) => setNewItem({ ...newItem, stock: text })}
-            keyboardType="numeric"
-          />
-          <TouchableOpacity style={styles.saveButton} onPress={handleAddItem}>
-            <Text style={styles.saveButtonText}>Save</Text>
-          </TouchableOpacity>
-          <TouchableOpacity style={styles.cancelButton} onPress={() => setModalVisible(false)}>
-            <Text style={styles.cancelButtonText}>Cancel</Text>
-          </TouchableOpacity>
+      {scanned && !processing && (
+        <Button title="Tap to Scan Again" onPress={() => setScanned(false)} />
+      )}
+      {processing && (
+        <View style={styles.loadingOverlay}>
+          <ActivityIndicator size="large" color="#fff" />
+          <Text style={styles.loadingText}>Processing...</Text>
         </View>
-      </Modal>
-
-      <TouchableOpacity style={styles.addButton} onPress={() => setModalVisible(true)}>
-        <Text style={styles.addButtonText}>+ Add New Item</Text>
-      </TouchableOpacity>
+      )}
     </View>
   );
-};
+}
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#EDE9FE', padding: 16 },
-  headerTitle: { fontSize: 24, fontWeight: 'bold', marginBottom: 16, textAlign: 'center' },
-  sectionTitle: { fontSize: 20, fontWeight: 'bold', marginVertical: 12 },
-  itemCard: { backgroundColor: '#fff', padding: 12, borderRadius: 8, marginBottom: 10 },
-  itemTitle: { fontSize: 18, fontWeight: 'bold', marginBottom: 4 },
-  buttonsContainer: { flexDirection: 'row', marginTop: 10 },
-  stockInButton: { backgroundColor: '#34D399', padding: 8, borderRadius: 8, marginRight: 8 },
-  stockInButtonText: { color: '#fff', textAlign: 'center' },
-  stockOutButton: { backgroundColor: '#FBBF24', padding: 8, borderRadius: 8 },
-  stockOutButtonText: { color: '#fff', textAlign: 'center' },
-  modalContainer: { flex: 1, justifyContent: 'center', padding: 20, backgroundColor: '#F3E8FF' },
-  modalTitle: { fontSize: 22, fontWeight: 'bold', marginBottom: 16, textAlign: 'center' },
-  input: { borderWidth: 1, borderRadius: 8, padding: 10, backgroundColor: '#fff', marginBottom: 12 },
-  saveButton: { backgroundColor: '#4ADE80', padding: 12, borderRadius: 8, marginBottom: 8 },
-  saveButtonText: { textAlign: 'center', color: '#fff', fontWeight: 'bold' },
-  cancelButton: { padding: 12 },
-  cancelButtonText: { textAlign: 'center', color: '#6B7280' },
-  addButton: { backgroundColor: '#6D28D9', padding: 10, borderRadius: 8, marginTop: 16 },
-  addButtonText: { color: '#fff', textAlign: 'center' },
+  container: {
+    flex: 1,
+    justifyContent: 'center',
+  },
+  message: {
+    textAlign: 'center',
+    marginBottom: 10,
+  },
+  loadingOverlay: {
+    position: 'absolute',
+    top: '45%',
+    left: 0,
+    right: 0,
+    alignItems: 'center',
+  },
+  loadingText: {
+    color: '#fff',
+    marginTop: 10,
+    fontSize: 16,
+  },
 });
-
-export default StockManagement;

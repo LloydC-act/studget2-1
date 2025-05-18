@@ -12,7 +12,6 @@ const RootLayout = () => {
         <Stack>
             <Stack.Screen name='index' options={{headerShown:false}}/>
             <Stack.Screen name='Login' options={{headerShown:false}}/>
-            <Stack.Screen name='Recovery' options={{headerShown:false}}/>
             <Stack.Screen name='dashboard' options={{title: 'Dashboard',headerShown:false}}/>
         </Stack>
       </SafeAreaProvider>

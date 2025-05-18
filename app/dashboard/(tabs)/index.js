@@ -1,23 +1,39 @@
-import React from 'react';
-import { View, Text, TextInput, StyleSheet, ScrollView, Image } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import { View, Text, TextInput, StyleSheet, ScrollView } from 'react-native';
 import { MaterialCommunityIcons, MaterialIcons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
+import { supabase } from '../../../utils/supabaseclient';
 
-const index = () => {
+const Index = () => {
   const router = useRouter();
+  const [products, setProducts] = useState([]);
+  const [loading, setLoading] = useState(true);
 
-  const items = [
-    { name: 'Keyboard', stock: 3 },
-    { name: 'Monitor', stock: 8 },
-    { name: 'CPU', stock: 2 },
-    { name: 'Mouse', stock: 5 },
-    { name: 'RAM', stock: 1 },
-    { name: 'SSD', stock: 6 },
-  ];
+  useEffect(() => {
+    // Fetch products from Supabase when component mounts
+    const fetchProducts = async () => {
+      const { data, error } = await supabase
+        .from('products')
+        .select('*');
+    
+      console.log('DATA:', data);
+      console.log('ERROR:', error);
+    
+      if (error) {
+        console.error('Supabase Error:', error.message);
+      } else {
+        setProducts(data);
+      }
+    
+      setLoading(false);
+    };
 
-  const totalItems = items.length;
-  const lowStockItems = items.filter(item => item.stock <= 3);
-  const latestAdded = items.slice(-3); // last 3 added items
+    fetchProducts();
+  }, []);
+
+  const totalItems = products.length;
+  const lowStockItems = products.filter(item => item.quantity <= 5);
+  const latestAdded = products.slice(-3); // last 3 added items
 
   return (
     <ScrollView style={styles.container}>
@@ -36,12 +52,16 @@ const index = () => {
               <Text style={styles.tableHeaderText}>Item Name</Text>
               <Text style={styles.tableHeaderText}>Amount</Text>
             </View>
-            {items.map((item, index) => (
-              <View key={index} style={styles.tableRow}>
-                <Text style={styles.tableRowText}>{item.name}</Text>
-                <Text style={styles.tableRowText}>{item.stock} pcs</Text>
-              </View>
-            ))}
+            {loading ? (
+              <Text>Loading...</Text>
+            ) : (
+              products.map((item, index) => (
+                <View key={index} style={styles.tableRow}>
+                  <Text style={styles.tableRowText}>{item.name}</Text>
+                  <Text style={styles.tableRowText}>{item.quantity} pcs</Text>
+                </View>
+              ))
+            )}
           </View>
         </View>
 
@@ -52,12 +72,16 @@ const index = () => {
               <Text style={styles.tableHeaderText}>Asset Name</Text>
               <Text style={styles.tableHeaderText}>Amount</Text>
             </View>
-            {items.map((item, index) => (
-              <View key={index} style={styles.tableRow}>
-                <Text style={styles.tableRowText}>{item.name}</Text>
-                <Text style={styles.tableRowText}>{item.stock} pcs</Text>
-              </View>
-            ))}
+            {loading ? (
+              <Text>Loading...</Text>
+            ) : (
+              products.map((item, index) => (
+                <View key={index} style={styles.tableRow}>
+                  <Text style={styles.tableRowText}>{item.name}</Text>
+                  <Text style={styles.tableRowText}>{item.quantity} pcs</Text>
+                </View>
+              ))
+            )}
           </View>
         </View>
       </View>
@@ -67,7 +91,6 @@ const index = () => {
 
         <View style={styles.summaryContent}>
           <View style={styles.summaryItem}>
-            <MaterialCommunityIcons name="box" size={30} color="#3b82f6" />
             <View style={styles.summaryText}>
               <Text style={styles.summaryNumber}>{totalItems}</Text>
               <Text>Total Items</Text>
@@ -75,7 +98,6 @@ const index = () => {
           </View>
 
           <View style={styles.summaryItem}>
-            <MaterialCommunityIcons name="alert" size={30} color="#ef4444" />
             <View style={styles.summaryText}>
               <Text style={styles.summaryNumber}>{lowStockItems.length}</Text>
               <Text>Low Stock</Text>
@@ -86,7 +108,7 @@ const index = () => {
         <Text style={[styles.summaryTitle, { marginTop: 20 }]}>Latest Added</Text>
         {latestAdded.map((item, index) => (
           <Text key={index} style={{ marginBottom: 4, color: '#1f2937' }}>
-            • {item.name} ({item.stock} pcs)
+            • {item.name} ({item.quantity} pcs)
           </Text>
         ))}
       </View>
@@ -194,4 +216,4 @@ const styles = StyleSheet.create({
   },
 });
 
-export default index;
+export default Index;

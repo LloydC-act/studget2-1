@@ -20,7 +20,7 @@ const DashboardLayout = () => {
         options={{
           title: 'Stocks',
           tabBarIcon: ({ focused }) => (
-            <SimpleLineIcons name={focused ? 'social-dropbox' : 'social-dropbox'} size={24} color='balck' /> // Profile icon
+            <MaterialCommunityIcons name={focused ? 'camera' : 'camera-outline'} size={24} color='balck' /> // Profile icon
           ),
         }} 
       />

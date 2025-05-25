@@ -18,9 +18,6 @@ const Landing = () => {
         resizeMode="contain" 
       />
     </View>
-    <View style={styles.header}>
-      <Text variant="headlineMedium" style={styles.recoveryText}>Best way to save your money.</Text>
-    </View>
     <Button 
         mode="contained" 
         style={styles.button} 

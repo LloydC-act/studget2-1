@@ -1,40 +1,68 @@
-import React from 'react';
-import { View, StyleSheet, Image } from 'react-native';
+import React, { useState } from 'react';
+import { View, StyleSheet, Image, Alert } from 'react-native';
 import { TextInput, Button, Text } from 'react-native-paper';
-import { useRouter } from 'expo-router'; // Import useRouter
+import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { supabase } from '../utils/supabaseclient';
 
 const Login = () => {
-  const router = useRouter(); // Initialize the router
+  const router = useRouter();
+
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [loading, setLoading] = useState(false);
+
+  const handleLogin = async () => {
+    if (!email || !password) {
+      Alert.alert('Missing Fields', 'Please enter both email and password.');
+      return;
+    }
+
+    setLoading(true);
+    const { error } = await supabase.auth.signInWithPassword({
+      email,
+      password,
+    });
+
+    if (error) {
+      Alert.alert('Login Failed', error.message);
+    } else {
+      router.replace('dashboard'); // Redirect to dashboard
+    }
+    setLoading(false);
+  };
 
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.loginBox}>
         <View style={styles.logoContainer}>
-          <Image
-            source={{ uri: 'https://placehold.co/50x50' }}
-            style={styles.logo}
-          />
-          <Text style={styles.logoText}>Inventory</Text>
+          <Image source={require('../assets/logo.png')} style={styles.logo} />
         </View>
         <Text style={styles.welcomeText}>Welcome👋</Text>
         <Text style={styles.subText}>Please login here</Text>
-        <TextInput 
-          label="User Id" 
-          mode="outlined" 
-          style={styles.input} 
+
+        <TextInput
+          label="Email"
+          mode="outlined"
+          value={email}
+          onChangeText={setEmail}
+          style={styles.input}
         />
-        <TextInput 
-          label="Password" 
-          mode="outlined" 
-          secureTextEntry 
-          style={styles.input} 
+        <TextInput
+          label="Password"
+          mode="outlined"
+          secureTextEntry
+          value={password}
+          onChangeText={setPassword}
+          style={styles.input}
           right={<TextInput.Icon name="eye" />}
         />
-        <Button 
-          mode="contained" 
-          style={styles.button} 
-          onPress={() => router.push('dashboard')}
+
+        <Button
+          mode="contained"
+          loading={loading}
+          style={styles.button}
+          onPress={handleLogin}
         >
           Login
         </Button>
@@ -64,9 +92,8 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
   },
   logo: {
-    width: 50,
-    height: 50,
-    marginBottom: 10,
+    width: 100,
+    height: 100,
   },
   logoText: {
     fontSize: 24,

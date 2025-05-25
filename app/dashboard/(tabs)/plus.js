@@ -19,25 +19,41 @@ export default function PlusScreen() {
   }
 
   const handleBarCodeScanned = async ({ data }) => {
-    if (scanned || processing) return;
-    setScanned(true);
-    setProcessing(true);
+  if (scanned || processing) return;
+  setScanned(true);
+  setProcessing(true);
 
-    try {
-      const { error } = await supabase.from('stock_out').insert([
-        { serial_number: data, quantity: 1 }
-      ]);
+  try {
+    // 1. Find product ID by serial number
+    const { data: product, error: productError } = await supabase
+      .from('products')
+      .select('id')
+      .eq('serial_number', data)
+      .single();
 
-      if (error) throw error;
-
-      Alert.alert("Success", `Stock Out for serial: ${data}`);
-    } catch (error) {
-      console.error(error);
-      Alert.alert("Error", error.message || "Failed to record stock out");
-    } finally {
-      setProcessing(false);
+    if (productError || !product) {
+      throw new Error("Product not found for scanned serial number.");
     }
-  };
+
+    // 2. Insert into stock_out using product_id
+    const { error: insertError } = await supabase.from('stock_out').insert([
+      {
+        product_id: product.id,
+        quantity: 1,
+        scanned_code: data,
+      },
+    ]);
+
+    if (insertError) throw insertError;
+
+    Alert.alert("Success", `Stock Out for serial: ${data}`);
+  } catch (error) {
+    console.error(error);
+    Alert.alert("Error", error.message || "Failed to record stock out");
+  } finally {
+    setProcessing(false);
+  }
+};
 
   return (
     <View style={styles.container}>

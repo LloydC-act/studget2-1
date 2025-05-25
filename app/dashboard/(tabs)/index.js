@@ -57,8 +57,22 @@ const Index = () => {
             ) : (
               products.map((item, index) => (
                 <View key={index} style={styles.tableRow}>
-                  <Text style={styles.tableRowText}>{item.name}</Text>
-                  <Text style={styles.tableRowText}>{item.quantity} pcs</Text>
+                  <Text
+                    style={[
+                      styles.tableRowText,
+                      item.quantity <= 5 && styles.lowStockText
+                    ]}
+                  >
+                    {item.name}
+                  </Text>
+                  <Text
+                    style={[
+                      styles.tableRowText,
+                      item.quantity <= 5 && styles.lowStockText
+                    ]}
+                  >
+                    {item.quantity} pcs
+                  </Text>
                 </View>
               ))
             )}
@@ -77,8 +91,22 @@ const Index = () => {
             ) : (
               products.map((item, index) => (
                 <View key={index} style={styles.tableRow}>
-                  <Text style={styles.tableRowText}>{item.name}</Text>
-                  <Text style={styles.tableRowText}>{item.quantity} pcs</Text>
+                 <Text
+                    style={[
+                      styles.tableRowText,
+                      item.quantity <= 5 && styles.lowStockText
+                    ]}
+                  >
+                    {item.name}
+                  </Text>
+                  <Text
+                    style={[
+                      styles.tableRowText,
+                      item.quantity <= 5 && styles.lowStockText
+                    ]}
+                  >
+                    {item.quantity} pcs
+                  </Text>
                 </View>
               ))
             )}
@@ -213,6 +241,9 @@ const styles = StyleSheet.create({
   summaryNumber: {
     fontSize: 24,
     fontWeight: 'bold',
+  },
+  lowStockText: {
+    color: 'red',
   },
 });
 

@@ -1,12 +1,15 @@
 import React, { useState } from 'react';
-import { Text, View, Button, StyleSheet, Alert, ActivityIndicator } from 'react-native';
+import { Text, View, Button, StyleSheet, Alert, ActivityIndicator, TextInput } from 'react-native';
 import { CameraView, useCameraPermissions } from 'expo-camera';
 import { supabase } from '../../../utils/supabaseclient';
 
 export default function PlusScreen() {
   const [permission, requestPermission] = useCameraPermissions();
   const [scanned, setScanned] = useState(false);
+  const [scannedData, setScannedData] = useState(null);
   const [processing, setProcessing] = useState(false);
+  const [quantity, setQuantity] = useState('');
+  const [awaitingQuantity, setAwaitingQuantity] = useState(false);
 
   if (!permission) return <Text>Requesting camera permission...</Text>;
   if (!permission.granted) {
@@ -18,42 +21,62 @@ export default function PlusScreen() {
     );
   }
 
-  const handleBarCodeScanned = async ({ data }) => {
-  if (scanned || processing) return;
-  setScanned(true);
-  setProcessing(true);
+  const handleBarCodeScanned = ({ data }) => {
+    if (scanned || processing) return;
+    setScanned(true);
+    setScannedData(data);
+    setAwaitingQuantity(true);
+  };
 
-  try {
-    // 1. Find product ID by serial number
-    const { data: product, error: productError } = await supabase
-      .from('products')
-      .select('id')
-      .eq('serial_number', data)
-      .single();
-
-    if (productError || !product) {
-      throw new Error("Product not found for scanned serial number.");
+  const handleConfirmStockOut = async () => {
+    const qty = parseInt(quantity, 10);
+    if (isNaN(qty) || qty <= 0) {
+      Alert.alert("Invalid Quantity", "Please enter a quantity greater than 0.");
+      return;
     }
 
-    // 2. Insert into stock_out using product_id
-    const { error: insertError } = await supabase.from('stock_out').insert([
-      {
-        product_id: product.id,
-        quantity: 1,
-        scanned_code: data,
-      },
-    ]);
+    setProcessing(true);
+    setAwaitingQuantity(false);
 
-    if (insertError) throw insertError;
+    try {
+      const { data: product, error: productError } = await supabase
+        .from('products')
+        .select('id')
+        .eq('serial_number', scannedData)
+        .single();
 
-    Alert.alert("Success", `Stock Out for serial: ${data}`);
-  } catch (error) {
-    console.error(error);
-    Alert.alert("Error", error.message || "Failed to record stock out");
-  } finally {
-    setProcessing(false);
-  }
-};
+      if (productError || !product) {
+        throw new Error("Product not found for scanned serial number.");
+      }
+
+      const { error: insertError } = await supabase.from('stock_out').insert([
+        {
+          product_id: product.id,
+          quantity: qty,
+          scanned_code: scannedData,
+        },
+      ]);
+
+      if (insertError) throw insertError;
+
+      Alert.alert("Success", `Stocked out ${qty} item(s) for serial: ${scannedData}`);
+    } catch (error) {
+      console.error(error);
+      Alert.alert("Error", error.message || "Failed to record stock out");
+    } finally {
+      setProcessing(false);
+      setScanned(false);
+      setScannedData(null);
+      setQuantity('');
+    }
+  };
+
+  const handleCancel = () => {
+    setScanned(false);
+    setScannedData(null);
+    setQuantity('');
+    setAwaitingQuantity(false);
+  };
 
   return (
     <View style={styles.container}>
@@ -64,7 +87,21 @@ export default function PlusScreen() {
           barcodeTypes: ['qr', 'code128', 'code39', 'code93', 'ean13', 'ean8', 'upc_a', 'upc_e'],
         }}
       />
-      {scanned && !processing && (
+      {awaitingQuantity && !processing && (
+        <View style={styles.inputContainer}>
+          <Text style={styles.message}>Scanned Serial: {scannedData}</Text>
+          <TextInput
+            style={styles.input}
+            placeholder="Enter quantity"
+            keyboardType="numeric"
+            value={quantity}
+            onChangeText={setQuantity}
+          />
+          <Button title="Confirm Stock Out" onPress={handleConfirmStockOut} />
+          <Button title="Cancel" color="red" onPress={handleCancel} />
+        </View>
+      )}
+      {scanned && !processing && !awaitingQuantity && (
         <Button title="Tap to Scan Again" onPress={() => setScanned(false)} />
       )}
       {processing && (
@@ -85,6 +122,29 @@ const styles = StyleSheet.create({
   message: {
     textAlign: 'center',
     marginBottom: 10,
+    color: '#fff',
+    backgroundColor: 'rgba(0,0,0,0.6)',
+    padding: 5,
+    borderRadius: 5,
+  },
+  inputContainer: {
+    position: 'absolute',
+    bottom: 100,
+    left: 20,
+    right: 20,
+    backgroundColor: 'white',
+    padding: 15,
+    borderRadius: 10,
+    elevation: 5,
+  },
+  input: {
+    borderWidth: 1,
+    borderColor: '#ccc',
+    borderRadius: 8,
+    padding: 10,
+    marginBottom: 10,
+    fontSize: 16,
+    backgroundColor: '#fff',
   },
   loadingOverlay: {
     position: 'absolute',

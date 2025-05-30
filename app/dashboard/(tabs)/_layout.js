@@ -18,18 +18,9 @@ const DashboardLayout = () => {
       <Tabs.Screen 
         name="plus" 
         options={{
-          title: 'Stocks',
+          title: 'Scan QR',
           tabBarIcon: ({ focused }) => (
             <MaterialCommunityIcons name={focused ? 'camera' : 'camera-outline'} size={24} color='balck' /> // Profile icon
-          ),
-        }} 
-      />
-      <Tabs.Screen 
-        name="Settings" 
-        options={{
-          title: 'Settings',
-          tabBarIcon: ({ focused }) => (
-            <MaterialCommunityIcons name= {focused ? 'cog' : 'cog-outline'} size={24} color='balck' /> // Settings icon
           ),
         }} 
       />

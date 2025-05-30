@@ -73,34 +73,6 @@ export default function Layout() {
             ),
           }}
         />
-        <Drawer.Screen
-          name="Help"
-          options={{
-            drawerLabel: 'Help',
-            title: 'Help',
-            drawerIcon: () => (
-              <MaterialCommunityIcons
-                name="help-circle-outline"
-                size={20}
-                color="#000"
-              />
-            ),
-          }}
-        />
-        <Drawer.Screen
-          name="Security"
-          options={{
-            drawerLabel: 'Security',
-            title: 'Security',
-            drawerIcon: () => (
-              <MaterialCommunityIcons
-                name="shield-check-outline"
-                size={20}
-                color="#000"
-              />
-            ),
-          }}
-        />
       </Drawer>
     </GestureHandlerRootView>
   );
